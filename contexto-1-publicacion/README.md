@@ -1,1 +1,1 @@
-# Contexto 1: Publicación y Distribución
+# Contexto 1: Publicación y Distribución de Contenido
