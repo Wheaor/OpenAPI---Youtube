@@ -15,7 +15,11 @@ El contrato formal de la API con sus endpoints, estructuras de datos (schemas), 
 A continuación se presenta el modelo de datos canónico y las relaciones estricta para el contexto publicitario:
 
 ```mermaid
-class EstadoFinanciero {
+classDiagram
+    direction TB
+
+    %% --- ENUMERADOS (Aislados como diccionario de datos estandarizado) ---
+    class EstadoFinanciero {
         <<enumeration>>
         AlDia
         Moroso
@@ -61,7 +65,7 @@ class EstadoFinanciero {
         Vencida
     }
 
-    %% --- NIVEL 1: CLASES RAÍZ (Abstractas/Independientes) ---
+    %% --- DOMINIO: GESTIÓN COMERCIAL (B2B) ---
     class Anunciante {
         - idAnunciante : UUID
         - razonSocial : String
@@ -72,15 +76,6 @@ class EstadoFinanciero {
         - estadoFinanciero : EstadoFinanciero
     }
 
-    class InventarioContenido {
-        - idItemCatalogo : UUID
-        - idCanal : UUID
-        - esMonetizable : Boolean
-        - categoriaContenido : String
-        - estadoSeguridadMarca : EstadoSeguridadMarca
-    }
-
-    %% --- NIVEL 2: CONTENEDORES TRANSACCIONALES ---
     class FacturaAnunciante {
         - idFactura : UUID
         - idAnunciante : UUID
@@ -101,16 +96,6 @@ class EstadoFinanciero {
         - estado : EstadoCampana
     }
 
-    class OportunidadVisualizacion {
-        - idOportunidad : UUID
-        - idItemCatalogo : UUID
-        - paisEspectador : String
-        - edadEspectador : Int
-        - formatoSolicitado : TipoFormato
-        + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
-    }
-
-    %% --- NIVEL 3: COMPONENTES INTERNOS DE LA CAMPAÑA ---
     class CriterioTargeting {
         - idTargeting : UUID
         - idCampana : UUID
@@ -132,6 +117,7 @@ class EstadoFinanciero {
         + calcularCPM() Decimal
     }
 
+    %% --- DOMINIO: INVENTARIO Y CREATIVOS ---
     class CreativoPublicitario {
         - idCreativo : UUID
         - idCampana : UUID
@@ -142,7 +128,24 @@ class EstadoFinanciero {
         - motivoRechazo : String
     }
 
-    %% --- NIVEL 4: EVENTOS GRANULARES ---
+    class InventarioContenido {
+        - idItemCatalogo : UUID
+        - idCanal : UUID
+        - esMonetizable : Boolean
+        - categoriaContenido : String
+        - estadoSeguridadMarca : EstadoSeguridadMarca
+    }
+
+    %% --- DOMINIO: MOTOR TRANSACCIONAL Y TELEMETRÍA ---
+    class OportunidadVisualizacion {
+        - idOportunidad : UUID
+        - idItemCatalogo : UUID
+        - paisEspectador : String
+        - edadEspectador : Int
+        - formatoSolicitado : TipoFormato
+        + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
+    }
+
     class RegistroInteraccionAd {
         - idInteraccion : UUID
         - idCreativo : UUID
@@ -151,17 +154,21 @@ class EstadoFinanciero {
         - timestamp : DateTime
     }
 
-    %% --- RELACIONES ESTRUCTURALES (El orden dicta la jerarquía visual) ---
-    Anunciante "1" *-- "0..*" FacturaAnunciante : recibe
-    Anunciante "1" *-- "0..*" CampanaPublicitaria : administra
+    %% --- RELACIONES UML ESTRICTAS ---
     
-    InventarioContenido "1" *-- "0..*" OportunidadVisualizacion : habilita
+    %% Composición Fuerte (Ciclo de vida atado al Anunciante)
+    Anunciante "1" *-- "0..*" FacturaAnunciante : recibe
+    Anunciante "1" *-- "0..*" CampanaPublicitaria : financia
 
-    CampanaPublicitaria "1" *-- "1" CriterioTargeting : segmenta
-    CampanaPublicitaria "1" *-- "1" ReporteRendimiento : evalua
-    CampanaPublicitaria "1" *-- "1..*" CreativoPublicitario : contiene
+    %% Composición Interna de la Campaña
+    CampanaPublicitaria "1" *-- "1" CriterioTargeting : segmenta_por
+    CampanaPublicitaria "1" *-- "1" ReporteRendimiento : monitorea_con
+    CampanaPublicitaria "1" *-- "1..*" CreativoPublicitario : despliega
 
-    CreativoPublicitario "1" *-- "0..*" RegistroInteraccionAd : mide
+    %% Asociaciones y Dependencias Operativas
+    InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : origina
+    
+    OportunidadVisualizacion ..> CampanaPublicitaria : evalua_elegibilidad
+    OportunidadVisualizacion ..> CreativoPublicitario : inyecta_ganador
 
-    OportunidadVisualizacion ..> CampanaPublicitaria : filtra
-    OportunidadVisualizacion ..> CreativoPublicitario : selecciona
+    CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : recolecta
