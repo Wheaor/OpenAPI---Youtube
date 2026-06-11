@@ -15,101 +15,7 @@ El contrato formal de la API con sus endpoints, estructuras de datos (schemas), 
 A continuación se presenta el modelo de datos canónico y las relaciones estricta para el contexto publicitario:
 
 ```mermaid
-classDiagram
-    direction TB
-    
-    %% CLASES MÁS ABSTRACTAS (RAÍZ DEL ÁRBOL)
-    class Anunciante {
-        - idAnunciante : UUID
-        - razonSocial : String
-        - rutFacturacion : String
-        - direccionFacturacion : String
-        - monedaPreferencia : String
-        - metodoPagoId : String
-        - estadoFinanciero : EstadoFinanciero
-    }
-
-    class InventarioContenido {
-        - idItemCatalogo : UUID
-        - idCanal : UUID
-        - esMonetizable : Boolean
-        - categoriaContenido : String
-        - estadoSeguridadMarca : EstadoSeguridadMarca
-    }
-
-    %% NIVEL 2
-    class FacturaAnunciante {
-        - idFactura : UUID
-        - idAnunciante : UUID
-        - periodoCobro : String
-        - montoTotalFacturado : Decimal
-        - fechaEmision : DateTime
-        - estadoPago : EstadoPago
-    }
-
-    class CampanaPublicitaria {
-        - idCampana : UUID
-        - idAnunciante : UUID
-        - objetivo : String
-        - presupuestoTotal : Decimal
-        - presupuestoRestante : Decimal
-        - fechaInicio : DateTime
-        - fechaFin : DateTime
-        - estado : EstadoCampana
-    }
-
-    class OportunidadVisualizacion {
-        - idOportunidad : UUID
-        - idItemCatalogo : UUID
-        - paisEspectador : String
-        - edadEspectador : Int
-        - formatoSolicitado : TipoFormato
-        + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
-    }
-
-    %% NIVEL 3
-    class CriterioTargeting {
-        - idTargeting : UUID
-        - idCampana : UUID
-        - paisesObjetivo : List~String~
-        - edadMinima : Int
-        - edadMaxima : Int
-        - categoriasContenido : List~String~
-        - interesesUsuario : List~String~
-        + estimarInventarioDisponible() Long
-    }
-
-    class ReporteRendimiento {
-        - idCampana : UUID
-        - impresionesTotales : Long
-        - clicksTotales : Long
-        - skipsTotales : Long
-        - gastoAcumulado : Decimal
-        + calcularCTR() Decimal
-        + calcularCPM() Decimal
-    }
-
-    class CreativoPublicitario {
-        - idCreativo : UUID
-        - idCampana : UUID
-        - urlResource : String
-        - tipoFormato : TipoFormato
-        - duracionSegundos : Int
-        - estadoAprobacion : EstadoAprobacion
-        - motivoRechazo : String
-    }
-
-    %% NIVEL 4
-    class RegistroInteraccionAd {
-        - idInteraccion : UUID
-        - idCreativo : UUID
-        - tipoInteraccion : TipoInteraccion
-        - costoGatillado : Decimal
-        - timestamp : DateTime
-    }
-
-    %% ENUMERADOS
-    class EstadoFinanciero {
+class EstadoFinanciero {
         <<enumeration>>
         AlDia
         Moroso
@@ -155,10 +61,100 @@ classDiagram
         Vencida
     }
 
-    %% RELACIONES ESTRUCTURALES JERÁRQUICAS (De arriba hacia abajo)
+    %% --- NIVEL 1: CLASES RAÍZ (Abstractas/Independientes) ---
+    class Anunciante {
+        - idAnunciante : UUID
+        - razonSocial : String
+        - rutFacturacion : String
+        - direccionFacturacion : String
+        - monedaPreferencia : String
+        - metodoPagoId : String
+        - estadoFinanciero : EstadoFinanciero
+    }
+
+    class InventarioContenido {
+        - idItemCatalogo : UUID
+        - idCanal : UUID
+        - esMonetizable : Boolean
+        - categoriaContenido : String
+        - estadoSeguridadMarca : EstadoSeguridadMarca
+    }
+
+    %% --- NIVEL 2: CONTENEDORES TRANSACCIONALES ---
+    class FacturaAnunciante {
+        - idFactura : UUID
+        - idAnunciante : UUID
+        - periodoCobro : String
+        - montoTotalFacturado : Decimal
+        - fechaEmision : DateTime
+        - estadoPago : EstadoPago
+    }
+
+    class CampanaPublicitaria {
+        - idCampana : UUID
+        - idAnunciante : UUID
+        - objetivo : String
+        - presupuestoTotal : Decimal
+        - presupuestoRestante : Decimal
+        - fechaInicio : DateTime
+        - fechaFin : DateTime
+        - estado : EstadoCampana
+    }
+
+    class OportunidadVisualizacion {
+        - idOportunidad : UUID
+        - idItemCatalogo : UUID
+        - paisEspectador : String
+        - edadEspectador : Int
+        - formatoSolicitado : TipoFormato
+        + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
+    }
+
+    %% --- NIVEL 3: COMPONENTES INTERNOS DE LA CAMPAÑA ---
+    class CriterioTargeting {
+        - idTargeting : UUID
+        - idCampana : UUID
+        - paisesObjetivo : List~String~
+        - edadMinima : Int
+        - edadMaxima : Int
+        - categoriasContenido : List~String~
+        - interesesUsuario : List~String~
+        + estimarInventarioDisponible() Long
+    }
+
+    class ReporteRendimiento {
+        - idCampana : UUID
+        - impresionesTotales : Long
+        - clicksTotales : Long
+        - skipsTotales : Long
+        - gastoAcumulado : Decimal
+        + calcularCTR() Decimal
+        + calcularCPM() Decimal
+    }
+
+    class CreativoPublicitario {
+        - idCreativo : UUID
+        - idCampana : UUID
+        - urlResource : String
+        - tipoFormato : TipoFormato
+        - duracionSegundos : Int
+        - estadoAprobacion : EstadoAprobacion
+        - motivoRechazo : String
+    }
+
+    %% --- NIVEL 4: EVENTOS GRANULARES ---
+    class RegistroInteraccionAd {
+        - idInteraccion : UUID
+        - idCreativo : UUID
+        - tipoInteraccion : TipoInteraccion
+        - costoGatillado : Decimal
+        - timestamp : DateTime
+    }
+
+    %% --- RELACIONES ESTRUCTURALES (El orden dicta la jerarquía visual) ---
     Anunciante "1" *-- "0..*" FacturaAnunciante : recibe
     Anunciante "1" *-- "0..*" CampanaPublicitaria : administra
-
+    
     InventarioContenido "1" *-- "0..*" OportunidadVisualizacion : habilita
 
     CampanaPublicitaria "1" *-- "1" CriterioTargeting : segmenta
@@ -169,12 +165,3 @@ classDiagram
 
     OportunidadVisualizacion ..> CampanaPublicitaria : filtra
     OportunidadVisualizacion ..> CreativoPublicitario : selecciona
-
-    %% ENLACES DE TIPADO PARA CENTRAR ENUMERADOS (Fuerza al motor a dibujarlos debajo de su clase correspondiente)
-    Anunciante ..> EstadoFinanciero
-    FacturaAnunciante ..> EstadoPago
-    CampanaPublicitaria ..> EstadoCampana
-    InventarioContenido ..> EstadoSeguridadMarca
-    CreativoPublicitario ..> EstadoAprobacion
-    CreativoPublicitario ..> TipoFormato
-    RegistroInteraccionAd ..> TipoInteraccion
