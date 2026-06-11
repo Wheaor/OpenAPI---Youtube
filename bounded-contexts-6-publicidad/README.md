@@ -67,100 +67,90 @@ classDiagram
 
     %% --- CLASES DEL MODELO ---
     class Anunciante {
-        -UUID idAnunciante
-        -String razonSocial
-        -String rutFacturacion
-        -String direccionFacturacion
-        -String monedaPreferencia
-        -String metodoPagoId
-        -EstadoFinanciero estadoFinanciero
+        - idAnunciante : UUID
+        - razonSocial : String
+        - rutFacturacion : String
+        - direccionFacturacion : String
+        - monedaPreferencia : String
+        - metodoPagoId : String
+        - estadoFinanciero : EstadoFinanciero
     }
 
     class CampanaPublicitaria {
-        -UUID idCampana
-        -UUID idAnunciante
-        -String objetivo
-        -Decimal presupuestoTotal
-        -Decimal presupuestoRestante
-        -DateTime fechaInicio
-        -DateTime fechaFin
-        -EstadoCampana estado
+        - idCampana : UUID
+        - idAnunciante : UUID
+        - objetivo : String
+        - presupuestoTotal : Decimal
+        - presupuestoRestante : Decimal
+        - fechaInicio : DateTime
+        - fechaFin : DateTime
+        - estado : EstadoCampana
     }
 
     class CreativoPublicitario {
-        -UUID idCreativo
-        -UUID idCampana
-        -String urlResource
-        -TipoFormato tipoFormato
-        -Int duracionSegundos
-        -EstadoAprobacion estadoAprobacion
-        -String motivoRechazo
+        - idCreativo : UUID
+        - idCampana : UUID
+        - urlResource : String
+        - tipoFormato : TipoFormato
+        - duracionSegundos : Int
+        - estadoAprobacion : EstadoAprobacion
+        - motivoRechazo : String
     }
 
     class CriterioTargeting {
-        -UUID idTargeting
-        -UUID idCampana
-        -List~String~ paisesObjetivo
-        -Int edadMinima
-        -Int edadMaxima
-        -List~String~ categoriasContenido
-        -List~String~ interesesUsuario
-        +estimarInventarioDisponible() Long
+        - idTargeting : UUID
+        - idCampana : UUID
+        - paisesObjetivo : List~String~
+        - edadMinima : Int
+        - edadMaxima : Int
+        - categoriasContenido : List~String~
+        - interesesUsuario : List~String~
+        + estimarInventarioDisponible() Long
     }
 
     class InventarioContenido {
-        -UUID idItemCatalogo
-        -UUID idCanal
-        -Boolean esMonetizable
-        -String categoriaContenido
-        -EstadoSeguridadMarca estadoSeguridadMarca
+        - idItemCatalogo : UUID
+        - idCanal : UUID
+        - esMonetizable : Boolean
+        - categoriaContenido : String
+        - estadoSeguridadMarca : EstadoSeguridadMarca
     }
 
     class OportunidadVisualizacion {
-        -UUID idOportunidad
-        -UUID idItemCatalogo
-        -String paisEspectador
-        -Int edadEspectador
-        -TipoFormato formatoSolicitado
-        +decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
+        - idOportunidad : UUID
+        - idItemCatalogo : UUID
+        - paisEspectador : String
+        - edadEspectador : Int
+        - formatoSolicitado : TipoFormato
+        + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
     }
 
     class RegistroInteraccionAd {
-        -UUID idInteraccion
-        -UUID idCreativo
-        -TipoInteraccion tipoInteraccion
-        -Decimal costoGatillado
-        -DateTime timestamp
+        - idInteraccion : UUID
+        - idCreativo : UUID
+        - tipoInteraccion : TipoInteraccion
+        - costoGatillado : Decimal
+        - timestamp : DateTime
     }
 
     class ReporteRendimiento {
-        -UUID idCampana
-        -Long impresionesTotales
-        -Long clicksTotales
-        -Long skipsTotales
-        -Decimal gastoAcumulado
-        +calcularCTR() Decimal
-        +calcularCPM() Decimal
+        - idCampana : UUID
+        - impresionesTotales : Long
+        - clicksTotales : Long
+        - skipsTotales : Long
+        - gastoAcumulado : Decimal
+        + calcularCTR() Decimal
+        + calcularCPM() Decimal
     }
 
     class FacturaAnunciante {
-        -UUID idFactura
-        -UUID idAnunciante
-        -String periodoCobro
-        -Decimal montoTotalFacturado
-        -DateTime fechaEmision
-        -EstadoPago estadoPago
+        - idFactura : UUID
+        - idAnunciante : UUID
+        - periodoCobro : String
+        - montoTotalFacturado : Decimal
+        - fechaEmision : DateTime
+        - estadoPago : EstadoPago
     }
-
-    %% --- ANCLAJE DE ENUMERADOS (Evita que floten) ---
-    Anunciante ..> EstadoFinanciero : tipado
-    CampanaPublicitaria ..> EstadoCampana : tipado
-    CreativoPublicitario ..> TipoFormato : tipado
-    CreativoPublicitario ..> EstadoAprobacion : tipado
-    InventarioContenido ..> EstadoSeguridadMarca : tipado
-    OportunidadVisualizacion ..> TipoFormato : tipado
-    RegistroInteraccionAd ..> TipoInteraccion : tipado
-    FacturaAnunciante ..> EstadoPago : tipado
 
     %% --- RELACIONES ESTRUCTURALES ---
     Anunciante "1" o-- "0..*" CampanaPublicitaria : administra
@@ -171,6 +161,6 @@ classDiagram
     CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : trackea
     InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : evalua
 
-    %% --- PUENTES DE INTEGRACIÓN INTERNA (Destruye la isla huérfana) ---
+    %% --- PUENTES DE INTEGRACIÓN INTERNA ---
     OportunidadVisualizacion ..> CampanaPublicitaria : analiza_para_subasta
     OportunidadVisualizacion ..> CreativoPublicitario : selecciona_y_retorna
