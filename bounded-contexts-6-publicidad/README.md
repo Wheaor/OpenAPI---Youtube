@@ -17,8 +17,8 @@ A continuación se presenta el modelo de datos canónico y las relaciones estric
 ```mermaid
 classDiagram
     direction TB
-
-    %% 1. CLASES PRINCIPALES Y SUS ATRIBUTOS
+    
+    %% CLASES MÁS ABSTRACTAS (RAÍZ DEL ÁRBOL)
     class Anunciante {
         - idAnunciante : UUID
         - razonSocial : String
@@ -37,6 +37,7 @@ classDiagram
         - estadoSeguridadMarca : EstadoSeguridadMarca
     }
 
+    %% NIVEL 2
     class FacturaAnunciante {
         - idFactura : UUID
         - idAnunciante : UUID
@@ -66,6 +67,7 @@ classDiagram
         + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
     }
 
+    %% NIVEL 3
     class CriterioTargeting {
         - idTargeting : UUID
         - idCampana : UUID
@@ -97,6 +99,7 @@ classDiagram
         - motivoRechazo : String
     }
 
+    %% NIVEL 4
     class RegistroInteraccionAd {
         - idInteraccion : UUID
         - idCreativo : UUID
@@ -105,21 +108,7 @@ classDiagram
         - timestamp : DateTime
     }
 
-    %% 2. RELACIONES ESTRUCTURALES (Ordenadas para forzar simetría jerárquica)
-    Anunciante "1" o-- "0..*" FacturaAnunciante : recibe
-    Anunciante "1" o-- "0..*" CampanaPublicitaria : administra
-    InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : evalua
-
-    CampanaPublicitaria "1" *-- "1" CriterioTargeting : compone
-    CampanaPublicitaria "1" <-- "1" ReporteRendimiento : analiza
-    CampanaPublicitaria "1" o-- "1..*" CreativoPublicitario : aloja
-    
-    OportunidadVisualizacion ..> CampanaPublicitaria : filtra
-    OportunidadVisualizacion ..> CreativoPublicitario : selecciona
-
-    CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : trackea
-
-    %% 3. ENUMERADOS (Aislados al final para no alterar el centro geométrico)
+    %% ENUMERADOS
     class EstadoFinanciero {
         <<enumeration>>
         AlDia
@@ -165,3 +154,27 @@ classDiagram
         Pagada
         Vencida
     }
+
+    %% RELACIONES ESTRUCTURALES JERÁRQUICAS (De arriba hacia abajo)
+    Anunciante "1" *-- "0..*" FacturaAnunciante : recibe
+    Anunciante "1" *-- "0..*" CampanaPublicitaria : administra
+
+    InventarioContenido "1" *-- "0..*" OportunidadVisualizacion : habilita
+
+    CampanaPublicitaria "1" *-- "1" CriterioTargeting : segmenta
+    CampanaPublicitaria "1" *-- "1" ReporteRendimiento : evalua
+    CampanaPublicitaria "1" *-- "1..*" CreativoPublicitario : contiene
+
+    CreativoPublicitario "1" *-- "0..*" RegistroInteraccionAd : mide
+
+    OportunidadVisualizacion ..> CampanaPublicitaria : filtra
+    OportunidadVisualizacion ..> CreativoPublicitario : selecciona
+
+    %% ENLACES DE TIPADO PARA CENTRAR ENUMERADOS (Fuerza al motor a dibujarlos debajo de su clase correspondiente)
+    Anunciante ..> EstadoFinanciero
+    FacturaAnunciante ..> EstadoPago
+    CampanaPublicitaria ..> EstadoCampana
+    InventarioContenido ..> EstadoSeguridadMarca
+    CreativoPublicitario ..> EstadoAprobacion
+    CreativoPublicitario ..> TipoFormato
+    RegistroInteraccionAd ..> TipoInteraccion
