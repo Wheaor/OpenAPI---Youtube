@@ -16,7 +16,7 @@ A continuación se presenta el modelo de datos canónico y las relaciones estric
 
 ```mermaid
 classDiagram
-    direction QT
+    direction TB
     
     %% --- ENUMERADOS (Tipos de datos estrictos) ---
     class EstadoFinanciero {
