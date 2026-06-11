@@ -18,7 +18,7 @@ A continuación se presenta el modelo de datos canónico y las relaciones estric
 classDiagram
     direction TB
     
-    %% --- ENUMERADOS ---
+    %% --- ENUMERADOS (Declarados, pero sin flechas que ensucien) ---
     class EstadoFinanciero {
         <<enumeration>>
         AlDia
@@ -76,6 +76,15 @@ classDiagram
         - estadoFinanciero : EstadoFinanciero
     }
 
+    class FacturaAnunciante {
+        - idFactura : UUID
+        - idAnunciante : UUID
+        - periodoCobro : String
+        - montoTotalFacturado : Decimal
+        - fechaEmision : DateTime
+        - estadoPago : EstadoPago
+    }
+
     class CampanaPublicitaria {
         - idCampana : UUID
         - idAnunciante : UUID
@@ -85,6 +94,27 @@ classDiagram
         - fechaInicio : DateTime
         - fechaFin : DateTime
         - estado : EstadoCampana
+    }
+
+    class CriterioTargeting {
+        - idTargeting : UUID
+        - idCampana : UUID
+        - paisesObjetivo : List~String~
+        - edadMinima : Int
+        - edadMaxima : Int
+        - categoriasContenido : List~String~
+        - interesesUsuario : List~String~
+        + estimarInventarioDisponible() Long
+    }
+
+    class ReporteRendimiento {
+        - idCampana : UUID
+        - impresionesTotales : Long
+        - clicksTotales : Long
+        - skipsTotales : Long
+        - gastoAcumulado : Decimal
+        + calcularCTR() Decimal
+        + calcularCPM() Decimal
     }
 
     class CreativoPublicitario {
@@ -97,15 +127,12 @@ classDiagram
         - motivoRechazo : String
     }
 
-    class CriterioTargeting {
-        - idTargeting : UUID
-        - idCampana : UUID
-        - paisesObjetivo : List~String~
-        - edadMinima : Int
-        - edadMaxima : Int
-        - categoriasContenido : List~String~
-        - interesesUsuario : List~String~
-        + estimarInventarioDisponible() Long
+    class RegistroInteraccionAd {
+        - idInteraccion : UUID
+        - idCreativo : UUID
+        - tipoInteraccion : TipoInteraccion
+        - costoGatillado : Decimal
+        - timestamp : DateTime
     }
 
     class InventarioContenido {
@@ -125,41 +152,17 @@ classDiagram
         + decidirAnuncioMostrar(campanasActivas: List) CreativoPublicitario
     }
 
-    class RegistroInteraccionAd {
-        - idInteraccion : UUID
-        - idCreativo : UUID
-        - tipoInteraccion : TipoInteraccion
-        - costoGatillado : Decimal
-        - timestamp : DateTime
-    }
-
-    class ReporteRendimiento {
-        - idCampana : UUID
-        - impresionesTotales : Long
-        - clicksTotales : Long
-        - skipsTotales : Long
-        - gastoAcumulado : Decimal
-        + calcularCTR() Decimal
-        + calcularCPM() Decimal
-    }
-
-    class FacturaAnunciante {
-        - idFactura : UUID
-        - idAnunciante : UUID
-        - periodoCobro : String
-        - montoTotalFacturado : Decimal
-        - fechaEmision : DateTime
-        - estadoPago : EstadoPago
-    }
-
-    %% --- RELACIONES ESTRUCTURALES ---
+    %% --- RELACIONES ESTRUCTURALES DEL NEGOCIO (Árbol limpio) ---
     Anunciante "1" o-- "0..*" CampanaPublicitaria : administra
     Anunciante "1" o-- "0..*" FacturaAnunciante : recibe
-    CampanaPublicitaria "1" o-- "1..*" CreativoPublicitario : aloja
-    CampanaPublicitaria "1" *-- "1" CriterioTargeting : compone
-    CampanaPublicitaria "1" <-- "1" ReporteRendimiento : analiza
-    CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : trackea
-    InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : evalua
+    
+    CampanaPublicitaria "1" *-- "1" CriterioTargeting : segmenta
+    CampanaPublicitaria "1" <-- "1" ReporteRendimiento : genera_metricas
+    CampanaPublicitaria "1" o-- "1..*" CreativoPublicitario : contiene
+    
+    CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : mide_rendimiento
+    
+    InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : habilita_subasta
 
     %% --- PUENTES DE INTEGRACIÓN INTERNA ---
     OportunidadVisualizacion ..> CampanaPublicitaria : analiza_para_subasta
