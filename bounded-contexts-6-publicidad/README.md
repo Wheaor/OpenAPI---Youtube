@@ -18,7 +18,7 @@ A continuación se presenta el modelo de datos canónico y las relaciones estric
 classDiagram
     direction TB
     
-    %% --- ENUMERADOS (Tipos de datos estrictos) ---
+    %% --- ENUMERADOS ---
     class EstadoFinanciero {
         <<enumeration>>
         AlDia
@@ -65,7 +65,7 @@ classDiagram
         Vencida
     }
 
-    %% --- CLASES DEL MODELO CANÓNICO ---
+    %% --- CLASES DEL MODELO ---
     class Anunciante {
         -UUID idAnunciante
         -String razonSocial
@@ -152,7 +152,17 @@ classDiagram
         -EstadoPago estadoPago
     }
 
-    %% --- RELACIONES Y ARQUITECTURA DEL SISTEMA ---
+    %% --- ANCLAJE DE ENUMERADOS (Evita que floten) ---
+    Anunciante ..> EstadoFinanciero : tipado
+    CampanaPublicitaria ..> EstadoCampana : tipado
+    CreativoPublicitario ..> TipoFormato : tipado
+    CreativoPublicitario ..> EstadoAprobacion : tipado
+    InventarioContenido ..> EstadoSeguridadMarca : tipado
+    OportunidadVisualizacion ..> TipoFormato : tipado
+    RegistroInteraccionAd ..> TipoInteraccion : tipado
+    FacturaAnunciante ..> EstadoPago : tipado
+
+    %% --- RELACIONES ESTRUCTURALES ---
     Anunciante "1" o-- "0..*" CampanaPublicitaria : administra
     Anunciante "1" o-- "0..*" FacturaAnunciante : recibe
     CampanaPublicitaria "1" o-- "1..*" CreativoPublicitario : aloja
@@ -160,3 +170,7 @@ classDiagram
     CampanaPublicitaria "1" <-- "1" ReporteRendimiento : analiza
     CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : trackea
     InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : evalua
+
+    %% --- PUENTES DE INTEGRACIÓN INTERNA (Destruye la isla huérfana) ---
+    OportunidadVisualizacion ..> CampanaPublicitaria : analiza_para_subasta
+    OportunidadVisualizacion ..> CreativoPublicitario : selecciona_y_retorna
