@@ -1,0 +1,846 @@
+openapi: 3.1.0
+info:
+  title: API de Publicidad y Marketplace de Anunciantes - YouTube B2B
+  version: 1.0.0
+  description: |
+    ### Contexto de Dominio 6: Publicidad y Marketplace de Anunciantes
+    Gestión del negocio publicitario B2B de la plataforma de manera desacoplada. 
+    Este servicio es responsable de:
+    * Registrar y administrar cuentas de Anunciantes y sus configuraciones fiscales (RF-F1).
+    * Controlar el ciclo de vida, vigencia y presupuestos de las Campañas Publicitarias (RF-F2).
+    * Almacenar, asociar y validar los Creativos Publicitarios según políticas (RF-F3).
+    * Definir criterios de segmentación geográfica, etaria y contextual (Targeting) (RF-F4).
+    * Determinar la elegibilidad del inventario de contenidos y asegurar Brand Safety (RF-F5).
+    * Arbitrar la entrega de anuncios en tiempo real ante oportunidades de visualización (RF-F6).
+    * Capturar la telemetría de interacciones (impresiones, clicks, skips) y calcular gastos (RF-F7).
+    * Exponer paneles analíticos de rendimiento y emitir facturas legales (Invoices) (RF-F8).
+  contact:
+    name: Equipo de Arquitectura de Software - UOH 2026
+paths:
+  /anunciantes:
+    post:
+      summary: Registrar una nueva cuenta de anunciante
+      description: Permite registrar una empresa publicitaria en el marketplace B2B (RF-F1). La cuenta se inicializa en estado 'AlDia'.
+      operationId: registrarAnunciante
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [razonSocial, rutFacturacion, monedaPreferencia]
+              properties:
+                razonSocial:
+                  type: string
+                  examples: ["Alimentos e Inversiones Tucapel S.A."]
+                rutFacturacion:
+                  type: string
+                  examples: ["76123456-K"]
+                direccionFacturacion:
+                  type: string
+                  examples: ["Av. Las Condes 1230, Oficina 401, Santiago"]
+                monedaPreferencia:
+                  type: string
+                  minLength: 3
+                  maxLength: 3
+                  examples: ["CLP"]
+      responses:
+        '201':
+          description: Anunciante registrado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Anunciante'
+        '400':
+          description: Datos de entrada inválidos o RUT con formato incorrecto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campanas:
+    post:
+      summary: Crear una nueva campaña publicitaria
+      description: Permite a un anunciante autenticado inyectar una campaña con objetivo, presupuesto total, vigencia y puja para subasta (RF-F2 / RF-F6).
+      operationId: crearCampana
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idAnunciante, objetivo, presupuestoTotal, pujaMaximaCPM, fechaInicio, fechaFin]
+              properties:
+                idAnunciante:
+                  type: string
+                  format: uuid
+                objetivo:
+                  type: string
+                  maxLength: 255
+                  examples: ["Lanzamiento de línea de productos Gran Selección."]
+                presupuestoTotal:
+                  type: number
+                  format: double
+                  minimum: 0.01
+                  examples: [5000000.00]
+                pujaMaximaCPM:
+                  type: number
+                  format: double
+                  minimum: 0.01
+                  description: Oferta máxima monetaria que el anunciante está dispuesto a pagar por cada 1000 impresiones en la subasta (RF-F6).
+                  examples: [2500.00]
+                fechaInicio:
+                  type: string
+                  format: date-time
+                  examples: ["2026-07-01T00:00:00Z"]
+                fechaFin:
+                  type: string
+                  format: date-time
+                  examples: ["2026-07-31T23:59:59Z"]
+      responses:
+        '201':
+          description: Campaña creada exitosamente en estado 'Creada'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampanaPublicitaria'
+        '400':
+          description: Error de validación (ej. la fecha de fin es anterior a la fecha de inicio).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Operación denegada porque el Anunciante está 'Moroso' o 'Suspendido'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campanas/{idCampana}/estado:
+    patch:
+      summary: Actualizar el estado operativo de una campaña
+      description: Permite pausar, reanudar o finalizar manualmente una campaña (RF-F2). También es invocado por el Sistema si el presupuesto se agota.
+      operationId: cambiarEstadoCampana
+      parameters:
+        - name: idCampana
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado:
+                  $ref: '#/components/schemas/EstadoCampana'
+      responses:
+        '200':
+          description: Estado de la campaña actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampanaPublicitaria'
+        '400':
+          description: Transición de estado inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La campaña especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campanas/{idCampana}/creativos:
+    post:
+      summary: Asociar un nuevo creativo publicitario a la campaña
+      description: Permite subir el recurso multimedia (video, display) and anexarlo a una campaña para su posterior validación de políticas (RF-F3).
+      operationId: asociarCreativo
+      parameters:
+        - name: idCampana
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [urlResource, tipoFormato, duracionSegundos]
+              properties:
+                urlResource:
+                  type: string
+                  format: uri
+                  examples: ["https://storage.googleapis.com/yt-ads/tucapel_15s.mp4"]
+                tipoFormato:
+                  $ref: '#/components/schemas/TipoFormato'
+                duracionSegundos:
+                  type: integer
+                  minimum: 0
+                  examples: [15]
+      responses:
+        '201':
+          description: Creativo registrado exitosamente en estado 'Pendiente'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativoPublicitario'
+        '400':
+          description: Formato inválido o duración inconsistente con el tipo de formato (ej. Bumper de más de 6 segundos).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La campaña indicada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campanas/{idCampana}/targeting:
+    put:
+      summary: Definir o actualizar los criterios de segmentación de la campaña
+      description: Establece las reglas de targeting geográfico, etario y de categorías de contenido para la entrega del anuncio (RF-F4).
+      operationId: configuringTargeting
+      parameters:
+        - name: idCampana
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paisesObjetivo, edadMinima, edadMaxima, categoriasContenido, interesesUsuario]
+              properties:
+                paisesObjetivo:
+                  type: array
+                  items:
+                    type: string
+                  examples: [["CL", "AR"]]
+                edadMinima:
+                  type: integer
+                  minimum: 13
+                  examples: [18]
+                edadMaxima:
+                  type: integer
+                  maximum: 100
+                  examples: [40]
+                categoriasContenido:
+                  type: array
+                  items:
+                    type: string
+                  examples: [["Videojuegos", "Tecnología"]]
+                interesesUsuario:
+                  type: array
+                  items:
+                    type: string
+                  examples: [["Programación", "Anime"]]
+      responses:
+        '200':
+          description: Criterios de targeting configurados exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CriterioTargeting'
+        '400':
+          description: Criterios inconsistentes (ej. edadMinima mayor que edadMaxima).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La campaña indicada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /inventario/{idItemCatalogo}:
+    put:
+      summary: Sincronizar la elegibilidad de un video del catálogo (RF-F5)
+      description: Endpoint invocado por el Contexto de Catálogo para notificar cambios en la monetización o Brand Safety de un contenido (RNF-4 / RF-F5).
+      operationId: sincronizarInventario
+      parameters:
+        - name: idItemCatalogo
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventarioContenido'
+      responses:
+        '200':
+          description: Estado de inventario actualizado/registrado correctamente.
+        '400':
+          description: Datos de sincronización inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subastas/decidir:
+    post:
+      summary: Decidir qué anuncio mostrar ante una oportunidad de visualización (RF-F6)
+      description: El reproductor de YouTube envía el contexto del espectador y el video, y el motor de subasta arbitra y retorna el anuncio ganador considerando la puja y targeting (RF-F6).
+      operationId: decidirAnuncio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OportunidadVisualizacion'
+      responses:
+        '200':
+          description: Subasta procesada. Retorna el creativo ganador.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreativoPublicitario'
+        '204':
+          description: No hay anuncios disponibles que cumplan con el targeting o el presupuesto. Se libera la reproducción sin anuncios.
+        '400':
+          description: Parámetros de la oportunidad de visualización erróneos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /telemetria/interacciones:
+    post:
+      summary: Registrar interacciones con los anuncios (RF-F7)
+      description: Captura las métricas en tiempo real emitidas por el reproductor (Impresiones, Clicks, Skips) y calcula el gasto inmediato de la campaña (RF-F7).
+      operationId: registrarInteraccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idCreativo, tipoInteraccion]
+              properties:
+                idCreativo:
+                  type: string
+                  format: uuid
+                tipoInteraccion:
+                  $ref: '#/components/schemas/TipoInteraccion'
+      responses:
+        '201':
+          description: Interacción registrada correctamente. El gasto de la campaña ha sido actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroInteraccionAd'
+        '400':
+          description: ID de creativo inválido o tipo de interacción no soportado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campanas/{idCampana}/reporte:
+    get:
+      summary: Obtener el reporte de rendimiento consolidado de una campaña (RF-F8)
+      description: Expone las métricas acumuladas de la campaña, incluyendo impresiones, clicks, skips, CTR, CPM y gasto acumulado (RF-F8).
+      operationId: obtenerReporteCampana
+      parameters:
+        - name: idCampana
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reporte de rendimiento obtenido correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteRendimiento'
+        '404':
+          description: La campaña específica no existe o no tiene un reporte asociado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /anunciantes/{idAnunciante}/facturas:
+    get:
+      summary: Listar las facturas emitidas para un anunciante (RF-F8 / RNF-3)
+      description: Retorna un listado histórico de cobros (invoices) del anunciante. Incluye paginación obligatoria por parámetros de URL (RNF-3).
+      operationId: listarFacturasAnunciante
+      parameters:
+        - name: idAnunciante
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página a recuperar.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Cantidad máxima de registros por página.
+      responses:
+        '200':
+          description: Listado de facturas recuperado exitosamente (paginado).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, totalRecords, page, limit]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FacturaAnunciante'
+                  totalRecords:
+                    type: integer
+                    examples: [45]
+                  page:
+                    type: integer
+                    examples: [1]
+                  limit:
+                    type: integer
+                    examples: [10]
+        '400':
+          description: Parámetros de paginación inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: El anunciante especificado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Autenticación basada en JSON Web Tokens (JWT). 
+        El token debe incluir los claims de identidad y rol (e.g., rol: Anunciante, rol: Sistema).
+
+  schemas:
+    # --- ENUMERADOS ---
+    EstadoFinanciero:
+      type: string
+      enum: [AlDia, Moroso, Suspendido]
+      description: Estado contable del anunciante que restringe su capacidad de operar.
+
+    EstadoCampana:
+      type: string
+      enum: [Creada, Activa, Pausada, Agotada, Finalizada]
+      description: Ciclo de vida operativo de una campaña publicitaria.
+
+    TipoFormato:
+      type: string
+      enum: [PreRoll, MidRoll, Bumper, Display]
+      description: Formato técnico y ubicación del anuncio en el reproductor.
+
+    EstadoAprobacion:
+      type: string
+      enum: [Pendiente, Aprobado, Rechazado]
+      description: Estado del control de políticas del creativo publicitario.
+
+    EstadoSeguridadMarca:
+      type: string
+      enum: [Seguro, Restringido, Inapropiado]
+      description: Clasificación de Brand Safety del contenido de video.
+
+    TipoInteraccion:
+      type: string
+      enum: [Impresion, Click, Skip]
+      description: Eventos de telemetría capturados durante la reproducción.
+
+    EstadoPago:
+      type: string
+      enum: [Pendiente, Pagada, Vencida]
+      description: Estado de la obligación financiera de una factura.
+
+    # --- MODELOS DE DATOS ---
+    Anunciante:
+      type: object
+      required: [idAnunciante, razonSocial, rutFacturacion, monedaPreferencia, estadoFinanciero]
+      properties:
+        idAnunciante:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+        razonSocial:
+          type: string
+          examples: ["Alimentos e Inversiones Tucapel S.A."]
+        rutFacturacion:
+          type: string
+          examples: ["76123456-K"]
+        direccionFacturacion:
+          type: string
+          examples: ["Av. Las Condes 1230, Oficina 401, Santiago"]
+        monedaPreferencia:
+          type: string
+          minLength: 3
+          maxLength: 3
+          examples: ["CLP"]
+        metodoPagoId:
+          type: string
+          format: uuid
+          examples: ["9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"]
+        estadoFinanciero:
+          $ref: '#/components/schemas/EstadoFinanciero'
+
+    CampanaPublicitaria:
+      type: object
+      required: [idCampana, idAnunciante, objetivo, presupuestoTotal, presupuestoRestante, pujaMaximaCPM, fechaInicio, fechaFin, estado]
+      properties:
+        idCampana:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["550e8400-e29b-41d4-a716-446655440000"]
+        idAnunciante:
+          type: string
+          format: uuid
+          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+        objetivo:
+          type: string
+          maxLength: 255
+          examples: ["Incrementar el alcance de marca para el lanzamiento de la línea Gran Selección."]
+        presupuestoTotal:
+          type: number
+          format: double
+          minimum: 0.01
+          examples: [5000000.00]
+        presupuestoRestante:
+          type: number
+          format: double
+          minimum: 0.00
+          readOnly: true
+          examples: [5000000.00]
+        pujaMaximaCPM:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Puja máxima por cada 1000 impresiones ganadas en subastas (RF-F6).
+          examples: [2500.00]
+        fechaInicio:
+          type: string
+          format: date-time
+          examples: ["2026-07-01T00:00:00Z"]
+        fechaFin:
+          type: string
+          format: date-time
+          examples: ["2026-07-31T23:59:59Z"]
+        estado:
+          allOf:
+            - $ref: '#/components/schemas/EstadoCampana'
+          default: Creada
+
+    ErrorResponse:
+      type: object
+      required: [codigo, mensaje, timestamp]
+      properties:
+        codigo:
+          type: string
+          description: Código de error interno de la aplicación para mapeo semántico.
+          examples: ["PRESUPUESTO_AGOTADO"]
+        mensaje:
+          type: string
+          description: Descripción amigable del error para el desarrollador o cliente.
+          examples: ["La campaña seleccionada no cuenta con fondos suficientes para transaccionar."]
+        timestamp:
+          type: string
+          format: date-time
+          examples: ["2026-06-15T21:57:08Z"]
+        detalles:
+          type: array
+          items:
+            type: string
+          description: Lista opcional con la traza o errores específicos de validación de campos.
+
+    FacturaAnunciante:
+      type: object
+      required: [idFactura, idAnunciante, periodoCobro, montoTotalFacturado, fechaEmision, estadoPago]
+      properties:
+        idFactura:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["7c1de4b8-2b1d-4444-bcde-3b4d5b6c7d8e"]
+        idAnunciante:
+          type: string
+          format: uuid
+          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+        periodoCobro:
+          type: string
+          examples: ["2026-06"]
+        montoTotalFacturado:
+          type: number
+          format: double
+          examples: [1250350.00]
+        fechaEmision:
+          type: string
+          format: date-time
+          examples: ["2026-06-01T08:00:00Z"]
+        estadoPago:
+          $ref: '#/components/schemas/EstadoPago'
+
+    CriterioTargeting:
+      type: object
+      required: [idTargeting, idCampana, paisesObjetivo, edadMinima, edadMaxima, categoriasContenido, interesesUsuario]
+      properties:
+        idTargeting:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["a8b9c1d2-e3f4-4a5b-6c7d-8e9f0a1b2c3d"]
+        idCampana:
+          type: string
+          format: uuid
+          examples: ["550e8400-e29b-41d4-a716-446655440000"]
+        paisesObjetivo:
+          type: array
+          items:
+            type: string
+          examples: [["CL", "AR", "BR"]]
+        edadMinima:
+          type: integer
+          minimum: 13
+          examples: [18]
+        edadMaxima:
+          type: integer
+          maximum: 100
+          examples: [35]
+        categoriasContenido:
+          type: array
+          items:
+            type: string
+          examples: [["Tecnología", "Videojuegos", "Educación"]]
+        interesesUsuario:
+          type: array
+          items:
+            type: string
+          examples: [["Programación", "Hardware", "Anime"]]
+
+    ReporteRendimiento:
+      type: object
+      required: [idCampana, impresionesTotales, clicksTotales, skipsTotales, gastoAcumulado]
+      properties:
+        idCampana:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["550e8400-e29b-41d4-a716-446655440000"]
+        impresionesTotales:
+          type: integer
+          format: int64
+          examples: [450000]
+        clicksTotales:
+          type: integer
+          format: int64
+          examples: [12500]
+        skipsTotales:
+          type: integer
+          format: int64
+          examples: [230000]
+        gastoAcumulado:
+          type: number
+          format: double
+          examples: [890450.50]
+
+    CreativoPublicitario:
+      type: object
+      required: [idCreativo, idCampana, urlResource, tipoFormato, duracionSegundos, estadoAprobacion]
+      properties:
+        idCreativo:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"]
+        idCampana:
+          type: string
+          format: uuid
+          examples: ["550e8400-e29b-41d4-a716-446655440000"]
+        urlResource:
+          type: string
+          format: uri
+          examples: ["https://storage.googleapis.com/yt-ads/tucapel_15s.mp4"]
+        tipoFormato:
+          $ref: '#/components/schemas/TipoFormato'
+        duracionSegundos:
+          type: integer
+          minimum: 0
+          examples: [15]
+        estadoAprobacion:
+          allOf:
+            - $ref: '#/components/schemas/EstadoAprobacion'
+          default: Pendiente
+        motivoRechazo:
+          type: [string, "null"]
+          examples: [null]
+
+    RegistroInteraccionAd:
+      type: object
+      required: [idInteraccion, idCreativo, tipoInteraccion, costoGatillado, timestamp]
+      properties:
+        idInteraccion:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["f8c3d2e1-a4b5-6c7d-8e9f-0a1b2c3d4e5f"]
+        idCreativo:
+          type: string
+          format: uuid
+          examples: ["1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"]
+        tipoInteraccion:
+          $ref: '#/components/schemas/TipoInteraccion'
+        costoGatillado:
+          type: number
+          format: double
+          examples: [1.50]
+        timestamp:
+          type: string
+          format: date-time
+          examples: ["2026-06-15T22:05:00Z"]
+
+    InventarioContenido:
+      type: object
+      required: [idCanal, esMonetizable, categoriaContenido, estadoSeguridadMarca]
+      properties:
+        idItemCatalogo:
+          type: string
+          format: uuid
+          readOnly: true
+          description: ID del video mapeado desde el contexto de Catálogo (RNF-2).
+          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+        idCanal:
+          type: string
+          format: uuid
+          examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+        esMonetizable:
+          type: boolean
+          examples: [true]
+        categoriaContenido:
+          type: string
+          examples: ["Videojuegos"]
+        estadoSeguridadMarca:
+          $ref: '#/components/schemas/EstadoSeguridadMarca'
+
+    OportunidadVisualizacion:
+      type: object
+      required: [idOportunidad, idItemCatalogo, paisEspectador, edadEspectador, formatoSolicitado]
+      properties:
+        idOportunidad:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["6c2b8d9e-0f1a-2b3c-4d5e-6f7a8b9c0d1e"]
+        idItemCatalogo:
+          type: string
+          format: uuid
+          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+        paisEspectador:
+          type: string
+          minLength: 2
+          maxLength: 2
+          examples: ["CL"]
+        edadEspectador:
+          type: integer
+          minimum: 0
+          examples: [22]
+        formatoSolicitado:
+          $ref: '#/components/schemas/TipoFormato'
+
+webhooks:
+  ingresoPublicitarioGenerado:
+    post:
+      summary: Notificar ingreso publicitario facturable (RNF-4 / RF-F7)
+      description: |
+        Evento asíncrono emitido por el microservicio de Publicidad hacia el Contexto de Monetización 
+        cuando se confirma una impresión facturable (RF-F7). Permite al Contexto 5 atribuir y repartir 
+        las ganancias al creador del canal (revenue share).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idItemCatalogo, idCanal, idCampana, montoTotalPlataforma, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d"]
+                idItemCatalogo:
+                  type: string
+                  format: uuid
+                  description: ID del video donde se reprodujo el anuncio. Utilizado por Monetización para el desglose analítico.
+                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                idCanal:
+                  type: string
+                  format: uuid
+                  description: Cuenta de negocio del creador dueño del video a quien se le debe pagar.
+                  examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+                idCampana:
+                  type: string
+                  format: uuid
+                  description: Campaña publicitaria que financió la impresión.
+                  examples: ["550e8400-e29b-41d4-a716-446655440000"]
+                montoTotalPlataforma:
+                  type: number
+                  format: double
+                  description: El valor bruto cobrado al anunciante por esta interacción específica.
+                  examples: [12.50]
+                moneda:
+                  type: string
+                  examples: ["CLP"]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-15T22:20:00Z"]
+      responses:
+        '202':
+          description: Evento recibido y aceptado por el Contexto de Monetización para su procesamiento asíncrono.
+        '500':
+          description: Error en el servicio receptor. El sistema de mensajería (Broker) reintentará el envío más tarde.
