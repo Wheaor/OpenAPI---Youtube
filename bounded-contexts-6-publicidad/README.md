@@ -12,13 +12,13 @@ El contrato formal de la API con sus endpoints, estructuras de datos (schemas), 
 ---
 
 ## 3. Diagrama de Clases Conceptual
-A continuación se presenta el modelo de datos canónico y las relaciones estricta para el contexto publicitario:
+A continuación se presenta el modelo de datos canónico y las relaciones estrictas para el contexto publicitario:
 
 ```mermaid
 classDiagram
     direction TB
 
-    %% --- ENUMERADOS (Aislados como diccionario de datos estandarizado) ---
+    %% --- ENUMERADOS ---
     class EstadoFinanciero {
         <<enumeration>>
         AlDia
@@ -155,20 +155,20 @@ classDiagram
     }
 
     %% --- RELACIONES UML ESTRICTAS ---
-    
-    %% Composición Fuerte (Ciclo de vida atado al Anunciante)
     Anunciante "1" *-- "0..*" FacturaAnunciante : recibe
     Anunciante "1" *-- "0..*" CampanaPublicitaria : financia
 
-    %% Composición Interna de la Campaña
     CampanaPublicitaria "1" *-- "1" CriterioTargeting : segmenta_por
     CampanaPublicitaria "1" *-- "1" ReporteRendimiento : monitorea_con
     CampanaPublicitaria "1" *-- "1..*" CreativoPublicitario : despliega
 
-    %% Asociaciones y Dependencias Operativas
     InventarioContenido "1" <-- "0..*" OportunidadVisualizacion : origina
+    OportunidadVisualizacion ..> CampanaPublicitaria : evalua_elegibilidad
+    OportunidadVisualizacion ..> CreativoPublicitario : inyecta_ganador
+    CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : recolecta
 ```
 
+---
 
 ## 4. Diagrama de Secuencia
 
@@ -210,8 +210,4 @@ sequenceDiagram
     Note over C6, C5: Desacoplamiento por mensajería (RNF-4 / RNF-5)
     C6->>C5: Webhook: ingresoPublicitarioGenerado (idCanal, montoTotalPlataforma)
     C5-->>C6: 202 Accepted
-    
-    OportunidadVisualizacion ..> CampanaPublicitaria : evalua_elegibilidad
-    OportunidadVisualizacion ..> CreativoPublicitario : inyecta_ganador
-
-    CreativoPublicitario "1" <-- "0..*" RegistroInteraccionAd : recolecta
+```
