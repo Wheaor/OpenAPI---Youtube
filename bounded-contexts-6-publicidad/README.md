@@ -180,36 +180,39 @@ sequenceDiagram
     actor Espectador as Espectador (Frontend)
     participant C3 as C3: Descubrimiento
     participant C1 as C1: Publicación
-    participant C6 as C6: Publicidad (Nosotros)
+    participant C6 as C6: Publicidad
     participant C5 as C5: Monetización
 
-    %% --- ETAPA 1: DESCUBRIMIENTO ---
-    Espectador->>C3: GET /feeds/home (RF-D2)
-    C3-->>Espectador: Retorna lista de videos recomendados
-    Espectador->>Espectador: Usuario hace Click en un video
+    %% --- ETAPA 1: DESCUBRIMIENTO Y REPRODUCCIÓN ---
+    Espectador->>C3: GET /feeds/home (Pide recomendaciones)
+    C3-->>Espectador: Retorna lista de videos recomendados (IDs)
+    Espectador->>Espectador: Usuario hace Click en un video recomendado
 
-    %% --- ETAPA 2: LA SUBASTA (CORE CONTEXTO 6) ---
-    Note over Espectador, C6: Oportunidad de Visualización (RF-F6)
-    Espectador->>C6: POST /subastas/decidir (idItemCatalogo, espectadorData)
-    critical Procesamiento de Subasta
-        C6->>C6: Filtrar InventarioContenido (esMonetizable && Seguro)
-        C6->>C6: Validar CriterioTargeting y pujaMaximaCPM
+    %% --- ETAPA 2: LA SUBASTA DE ANUNCIOS (NUESTRO CORE) ---
+    Note over Espectador, C6: Oportunidad de Visualización detectada antes del Playback
+    Espectador->>C6: POST /subastas/decidir (Envía datos del espectador y video ID)
+    critical Ejecución Interna de la Subasta (Baja Latencia)
+        C6->>C6: Verifica base de datos local (InventarioContenido)
+        Note over C6: Valida: esMonetizable == true y BrandSafety == Seguro
+        C6->>C6: Filtra campañas activas por Targeting (País, Edad, Categoría)
+        C6->>C6: Evalúa pujaMaximaCPM de las campañas finalistas
     end
-    C6-->>Espectador: Retorna CreativoPublicitario + AdTransactionToken
+    C6-->>Espectador: Retorna CreativoPublicitario ganador (URL del ad y AdTransactionToken)
 
-    %% --- ETAPA 3: PLAYBACK ---
-    Espectador->>C1: GET /playback/session (RF-P3)
-    Espectador->>Espectador: El reproductor inyecta el video del anuncio
-    Espectador->>Espectador: El espectador mira el anuncio completo
+    %% --- ETAPA 3: PLAYBACK E INTERACCIÓN ---
+    Espectador->>C1: GET /playback/session (Inicia stream técnico del video)
+    Espectador->>Espectador: El reproductor inserta e inyecta el video del anuncio bruto
+    Espectador->>Espectador: El espectador mira el anuncio completo (Impresión Facturable)
 
-    %% --- ETAPA 4: TELEMETRÍA E INGRESOS ---
-    Espectador->>C6: POST /telemetria/interacciones (Token, tipoInteraccion: Impresion)
-    C6-->>Espectador: 201 Created (RF-F7)
+    %% --- ETAPA 4: TELEMETRÍA Y DISTRIBUCIÓN DE INGRESOS ---
+    Espectador->>C6: POST /telemetria/interacciones (Envía token y tipoInteraccion: Impresion)
+    C6-->>Espectador: 201 Created (Confirmación de recepción de telemetría)
+    Note over C6: El hilo de la subasta se libera. El usuario sigue viendo su video en paz.
 
-    %% --- INTEGRACIÓN ASÍNCRONA POR EVENTOS ---
-    Note over C6, C5: Desacoplamiento por mensajería (RNF-4 / RNF-5)
-    C6->>C5: Webhook: ingresoPublicitarioGenerado (idCanal, montoTotalPlataforma)
-    C5-->>C6: 202 Accepted
+    %% --- INTEGRACIÓN ASÍNCRONA (RNF-4) ---
+    Note over C6, C5: Desacoplamiento por mensajería (Consistencia Eventual)
+    C6->>C5: Webhook: ingresoPublicitarioGenerado (idCanal, montoTotalPlataforma, timestamp)
+    C5-->>C6: 202 Accepted (Monetización recibe el dinero bruto y procesa revenue share)
     
     OportunidadVisualizacion ..> CampanaPublicitaria : evalua_elegibilidad
     OportunidadVisualizacion ..> CreativoPublicitario : inyecta_ganador
