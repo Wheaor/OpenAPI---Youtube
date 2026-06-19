@@ -1,0 +1,1095 @@
+openapi: 3.1.0
+info:
+  title: API de Publicación y Distribución de Contenido - YouTube
+  version: 1.0.0
+  description: |
+    ### Contexto de Dominio 1: Publicación y Distribución de Contenido
+    Gestión del ciclo de vida técnico del video de manera desacoplada.
+    Este servicio es responsable de:
+    * Iniciar, recibir y validar la Subida de archivos de video por parte de los creadores (RF-P1).
+    * Disparar y monitorear el Procesamiento técnico, generando múltiples calidades del mismo Asset (RF-P2).
+    * Entregar la información de Reproducción adaptada a dispositivo, ancho de banda y región, y registrar sesiones de playback (RF-P3).
+    * Configurar, iniciar y finalizar Transmisiones en Vivo, generando una versión grabada al término del live (RF-P4).
+    * Exponer el listado y detalle técnico de los Assets asociados a un creador (RF-P5).
+
+    Este contexto conoce al video como **archivo/stream**, no como producto editorial: no decide su visibilidad pública ni gestiona su metadata (título, descripción, tags), responsabilidad exclusiva del Contexto de Catálogo.
+  contact:
+    name: Equipo de Arquitectura de Software - UOH 2026
+
+paths:
+  /subidas:
+    post:
+      summary: Iniciar una nueva subida de video
+      description: Permite a un creador iniciar una subida, ya sea completa o por partes (RF-P1). La subida se inicializa en estado 'EnProgreso'.
+      operationId: iniciarSubida
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idCreador, nombreArchivo, tamanoBytesTotal, tipoSubida]
+              properties:
+                idCreador:
+                  type: string
+                  format: uuid
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                nombreArchivo:
+                  type: string
+                  examples: ["vlog-viaje-patagonia-ep3.mp4"]
+                tamanoBytesTotal:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  examples: [524288000]
+                tipoSubida:
+                  type: string
+                  enum: [Completa, PorPartes]
+                  description: Indica si el archivo se enviará en un solo request o fragmentado en múltiples partes.
+                  examples: ["PorPartes"]
+      responses:
+        '201':
+          description: Subida iniciada exitosamente. Retorna la URL o las URLs de destino para el envío de los bytes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subida'
+        '400':
+          description: Datos de entrada inválidos (ej. tamaño de archivo no soportado).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subidas/{idSubida}/partes:
+    put:
+      summary: Subir un fragmento del archivo de video
+      description: Recibe un fragmento binario del archivo cuando la subida es de tipo 'PorPartes' (RF-P1).
+      operationId: subirParte
+      parameters:
+        - name: idSubida
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: numeroParte
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Posición secuencial del fragmento dentro de la subida.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Fragmento recibido y almacenado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subida'
+        '400':
+          description: Fragmento inválido o fuera de secuencia.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La subida especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subidas/{idSubida}:
+    get:
+      summary: Consultar el estado y progreso de una subida
+      description: Permite monitorear el avance de una subida en curso (RF-P1).
+      operationId: obtenerEstadoSubida
+      parameters:
+        - name: idSubida
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Estado de la subida recuperado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subida'
+        '404':
+          description: La subida especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Cancelar una subida en curso
+      description: Permite a un creador cancelar una subida antes de que finalice (RF-P1).
+      operationId: cancelarSubida
+      parameters:
+        - name: idSubida
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subida cancelada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subida'
+        '409':
+          description: La subida ya finalizó o fue procesada, por lo que no puede cancelarse.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La subida especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subidas/{idSubida}/completar:
+    post:
+      summary: Finalizar y validar una subida
+      description: Valida que todas las partes hayan sido recibidas correctamente y marca la subida como 'Completada', disparando automáticamente el procesamiento técnico del Asset (RF-P1 / RF-P2).
+      operationId: completarSubida
+      parameters:
+        - name: idSubida
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subida validada y completada. El procesamiento técnico ha sido encolado automáticamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '400':
+          description: La subida no pudo validarse (ej. faltan partes o el archivo está corrupto).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La subida especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /assets/{idAsset}/procesamiento:
+    get:
+      summary: Consultar el estado del procesamiento técnico de un asset
+      description: Expone el estado del procesamiento (pendiente, en curso, completado, fallido) y las calidades ya generadas (RF-P2).
+      operationId: obtenerEstadoProcesamiento
+      parameters:
+        - name: idAsset
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Estado de procesamiento recuperado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Procesamiento'
+        '404':
+          description: El asset especificado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /assets/{idAsset}/procesamiento/reintentar:
+    post:
+      summary: Reintentar un procesamiento fallido
+      description: Permite volver a encolar el procesamiento técnico de un asset cuyo último intento finalizó en estado 'Fallido' (RF-P2).
+      operationId: reintentarProcesamiento
+      parameters:
+        - name: idAsset
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Reintento de procesamiento encolado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Procesamiento'
+        '409':
+          description: El procesamiento no se puede reintentar porque no se encuentra en estado 'Fallido'.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: El asset especificado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /assets/{idAsset}/reproduccion/manifest:
+    get:
+      summary: Obtener la información necesaria para reproducir un asset
+      description: Entrega el manifest de reproducción adaptado al dispositivo, ancho de banda y región del espectador, referenciando las calidades disponibles del asset (RF-P3).
+      operationId: obtenerManifestReproduccion
+      parameters:
+        - name: idAsset
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: dispositivo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Movil, Tablet, Desktop, SmartTV, Consola]
+          description: Tipo de dispositivo del espectador, utilizado para seleccionar el formato de entrega óptimo.
+        - name: anchoBandaKbps
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: Ancho de banda estimado del espectador, utilizado para preseleccionar la calidad inicial.
+        - name: region
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 2
+          description: Código de país del espectador, utilizado para enrutar a la CDN más cercana.
+          examples: ["CL"]
+      responses:
+        '200':
+          description: Manifest de reproducción generado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestReproduccion'
+        '404':
+          description: El asset no existe o aún no tiene calidades procesadas disponibles.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: El asset existe pero su procesamiento no ha finalizado, por lo que no puede reproducirse aún.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sesiones-reproduccion:
+    post:
+      summary: Iniciar una sesión de reproducción
+      description: Registra el inicio de una sesión de playback sobre un asset, asociada a un espectador y dispositivo (RF-P3).
+      operationId: iniciarSesionReproduccion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idAsset, idEspectador, calidadInicial, dispositivo]
+              properties:
+                idAsset:
+                  type: string
+                  format: uuid
+                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                idEspectador:
+                  type: string
+                  format: uuid
+                  examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+                calidadInicial:
+                  type: string
+                  examples: ["720p"]
+                dispositivo:
+                  type: string
+                  enum: [Movil, Tablet, Desktop, SmartTV, Consola]
+                  examples: ["Movil"]
+      responses:
+        '201':
+          description: Sesión de reproducción iniciada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionReproduccion'
+        '404':
+          description: El asset especificado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sesiones-reproduccion/{idSesion}:
+    patch:
+      summary: Actualizar el progreso o finalizar una sesión de reproducción
+      description: Reporta el avance de la reproducción (segundo actual, calidad en uso, interrupciones) o marca la sesión como finalizada, capturando las métricas técnicas correspondientes (RF-P3).
+      operationId: actualizarSesionReproduccion
+      parameters:
+        - name: idSesion
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                segundoActual:
+                  type: integer
+                  minimum: 0
+                  examples: [305]
+                calidadEnUso:
+                  type: string
+                  examples: ["1080p"]
+                interrupciones:
+                  type: integer
+                  minimum: 0
+                  description: Contador de cortes o rebuffering detectados durante la reproducción.
+                  examples: [2]
+                finalizada:
+                  type: boolean
+                  description: Indica si la sesión debe marcarse como completada con esta actualización.
+                  examples: [false]
+      responses:
+        '200':
+          description: Sesión actualizada correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SesionReproduccion'
+        '404':
+          description: La sesión especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: La sesión ya se encuentra finalizada y no admite más actualizaciones.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transmisiones-vivo:
+    post:
+      summary: Configurar una nueva transmisión en vivo
+      description: Permite a un creador configurar un live y obtener los datos de conexión para emitir desde software externo como OBS (RF-P4).
+      operationId: configurarTransmisionVivo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idCreador, titulo]
+              properties:
+                idCreador:
+                  type: string
+                  format: uuid
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                titulo:
+                  type: string
+                  maxLength: 255
+                  examples: ["Sesión de preguntas y respuestas - Vivo"]
+      responses:
+        '201':
+          description: Transmisión configurada. Retorna los datos de conexión (ingestUrl, claveStream) para el software de emisión.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransmisionVivo'
+        '400':
+          description: Datos de configuración inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transmisiones-vivo/{idTransmision}/estado:
+    patch:
+      summary: Iniciar, pausar o finalizar una transmisión en vivo
+      description: Controla el ciclo de vida operativo del live (RF-P4). Al finalizar, el sistema puede generar automáticamente una versión grabada reutilizable como video on-demand.
+      operationId: cambiarEstadoTransmisionVivo
+      parameters:
+        - name: idTransmision
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado:
+                  $ref: '#/components/schemas/EstadoTransmisionVivo'
+                generarGrabacion:
+                  type: boolean
+                  description: Cuando 'estado' es 'Finalizada', indica si debe generarse un Asset on-demand a partir de la grabación del live.
+                  default: true
+                  examples: [true]
+      responses:
+        '200':
+          description: Estado de la transmisión actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransmisionVivo'
+        '400':
+          description: Transición de estado inválida (ej. finalizar una transmisión que aún no ha sido iniciada).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La transmisión especificada no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /creadores/{idCreador}/assets:
+    get:
+      summary: Listar los contenidos técnicos asociados a un creador
+      description: Retorna un listado paginado de los assets técnicos (subidos y/o procesados) que pertenecen a un creador (RF-P5 / RNF-3).
+      operationId: listarAssetsPorCreador
+      parameters:
+        - name: idCreador
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EstadoProcesamiento'
+          description: Filtra los assets por estado de procesamiento.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Número de página a recuperar.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Cantidad máxima de registros por página.
+      responses:
+        '200':
+          description: Listado de assets técnicos recuperado exitosamente (paginado).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, totalRecords, page, limit]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+                  totalRecords:
+                    type: integer
+                    examples: [37]
+                  page:
+                    type: integer
+                    examples: [1]
+                  limit:
+                    type: integer
+                    examples: [10]
+        '400':
+          description: Parámetros de paginación inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: El creador especificado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /assets/{idAsset}:
+    get:
+      summary: Consultar el detalle técnico de un asset
+      description: Retorna la información técnica completa de un asset (duración, formatos/calidades disponibles, estado de procesamiento) (RF-P5).
+      operationId: obtenerDetalleAsset
+      parameters:
+        - name: idAsset
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detalle técnico del asset recuperado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDetalle'
+        '404':
+          description: El asset especificado no existe.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Autenticación basada en JSON Web Tokens (JWT).
+        El token debe incluir los claims de identidad y rol (e.g., rol: Creador, rol: Sistema).
+
+  schemas:
+    # --- ENUMERADOS ---
+    EstadoSubida:
+      type: string
+      enum: [EnProgreso, Completada, Cancelada, Fallida]
+      description: Ciclo de vida de una subida de archivo de video.
+
+    EstadoProcesamiento:
+      type: string
+      enum: [Pendiente, EnCurso, Completado, Fallido]
+      description: Ciclo de vida del procesamiento técnico (transcoding) de un asset.
+
+    EstadoTransmisionVivo:
+      type: string
+      enum: [Configurada, EnVivo, Pausada, Finalizada]
+      description: Ciclo de vida operativo de una transmisión en vivo.
+
+    # --- MODELOS DE DATOS ---
+    Subida:
+      type: object
+      required: [idSubida, idCreador, nombreArchivo, tamanoBytesTotal, tipoSubida, estado]
+      properties:
+        idSubida:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
+        idCreador:
+          type: string
+          format: uuid
+          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+        nombreArchivo:
+          type: string
+          examples: ["vlog-viaje-patagonia-ep3.mp4"]
+        tamanoBytesTotal:
+          type: integer
+          format: int64
+          examples: [524288000]
+        tipoSubida:
+          type: string
+          enum: [Completa, PorPartes]
+          examples: ["PorPartes"]
+        bytesRecibidos:
+          type: integer
+          format: int64
+          readOnly: true
+          description: Cantidad de bytes recibidos hasta el momento, utilizada para calcular el progreso (RF-P1).
+          examples: [262144000]
+        estado:
+          allOf:
+            - $ref: '#/components/schemas/EstadoSubida'
+          default: EnProgreso
+        idAssetResultante:
+          type: [string, "null"]
+          format: uuid
+          readOnly: true
+          description: Referencia al Asset generado una vez que la subida se completa.
+          examples: [null]
+
+    Asset:
+      type: object
+      required: [idAsset, idCreador, idSubidaOrigen, duracionSegundos, estado]
+      properties:
+        idAsset:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Identificador técnico del contenido (videoAssetId), referenciado por el Contexto de Catálogo (RNF-2).
+          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+        idCreador:
+          type: string
+          format: uuid
+          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+        idSubidaOrigen:
+          type: string
+          format: uuid
+          examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
+        duracionSegundos:
+          type: integer
+          minimum: 0
+          examples: [842]
+        estado:
+          allOf:
+            - $ref: '#/components/schemas/EstadoProcesamiento'
+          default: Pendiente
+
+    AssetDetalle:
+      type: object
+      description: Vista extendida del Asset, utilizada para consulta de detalle técnico (RF-P5).
+      allOf:
+        - $ref: '#/components/schemas/Asset'
+        - type: object
+          properties:
+            formatosDisponibles:
+              type: array
+              items:
+                type: string
+              description: Calidades técnicas generadas y disponibles para reproducción.
+              examples: [["360p", "720p", "1080p"]]
+            tamanoBytesOriginal:
+              type: integer
+              format: int64
+              examples: [524288000]
+            fechaCreacion:
+              type: string
+              format: date-time
+              examples: ["2026-06-10T14:32:00Z"]
+
+    Procesamiento:
+      type: object
+      required: [idAsset, estado, calidadesGeneradas]
+      properties:
+        idAsset:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+        estado:
+          $ref: '#/components/schemas/EstadoProcesamiento'
+        calidadesGeneradas:
+          type: array
+          items:
+            type: string
+          description: Resoluciones ya generadas para este asset (RF-P2).
+          examples: [["360p", "720p", "1080p"]]
+        motivoFallo:
+          type: [string, "null"]
+          examples: [null]
+        intentos:
+          type: integer
+          minimum: 1
+          readOnly: true
+          examples: [1]
+
+    ManifestReproduccion:
+      type: object
+      required: [idAsset, calidadesDisponibles, urlsReproduccion]
+      properties:
+        idAsset:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+        calidadesDisponibles:
+          type: array
+          items:
+            type: string
+          examples: [["360p", "720p", "1080p"]]
+        calidadRecomendada:
+          type: string
+          description: Calidad sugerida según el ancho de banda y dispositivo informados (RF-P3).
+          examples: ["720p"]
+        urlsReproduccion:
+          type: object
+          description: Mapa de calidad a URL de streaming, ya resuelto contra la CDN regional correspondiente.
+          additionalProperties:
+            type: string
+            format: uri
+          examples: [{"360p": "https://cdn-cl.yt.example/d3b0.../360p.m3u8", "720p": "https://cdn-cl.yt.example/d3b0.../720p.m3u8"}]
+
+    SesionReproduccion:
+      type: object
+      required: [idSesion, idAsset, idEspectador, dispositivo, estado]
+      properties:
+        idSesion:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
+        idAsset:
+          type: string
+          format: uuid
+          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+        idEspectador:
+          type: string
+          format: uuid
+          examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+        dispositivo:
+          type: string
+          enum: [Movil, Tablet, Desktop, SmartTV, Consola]
+          examples: ["Movil"]
+        segundoActual:
+          type: integer
+          minimum: 0
+          examples: [305]
+        calidadEnUso:
+          type: string
+          examples: ["1080p"]
+        interrupciones:
+          type: integer
+          minimum: 0
+          examples: [2]
+        estado:
+          type: string
+          enum: [Activa, Finalizada]
+          default: Activa
+          examples: ["Activa"]
+
+    TransmisionVivo:
+      type: object
+      required: [idTransmision, idCreador, titulo, estado, ingestUrl, claveStream]
+      properties:
+        idTransmision:
+          type: string
+          format: uuid
+          readOnly: true
+          examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
+        idCreador:
+          type: string
+          format: uuid
+          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+        titulo:
+          type: string
+          maxLength: 255
+          examples: ["Sesión de preguntas y respuestas - Vivo"]
+        estado:
+          allOf:
+            - $ref: '#/components/schemas/EstadoTransmisionVivo'
+          default: Configurada
+        ingestUrl:
+          type: string
+          format: uri
+          readOnly: true
+          description: Endpoint de ingesta al que el software externo (OBS, etc.) debe conectarse para emitir.
+          examples: ["rtmp://ingest.yt.example/live"]
+        claveStream:
+          type: string
+          readOnly: true
+          description: Clave secreta de transmisión asociada a esta configuración de live.
+          examples: ["live_8f14e45f-ceea-stream-key"]
+        idAssetGrabacion:
+          type: [string, "null"]
+          format: uuid
+          readOnly: true
+          description: Referencia al Asset on-demand generado al finalizar el live, si se solicitó grabación.
+          examples: [null]
+
+    ErrorResponse:
+      type: object
+      required: [codigo, mensaje, timestamp]
+      properties:
+        codigo:
+          type: string
+          description: Código de error interno de la aplicación para mapeo semántico.
+          examples: ["SUBIDA_INCOMPLETA"]
+        mensaje:
+          type: string
+          description: Descripción amigable del error para el desarrollador o cliente.
+          examples: ["No se han recibido todas las partes declaradas para esta subida."]
+        timestamp:
+          type: string
+          format: date-time
+          examples: ["2026-06-15T21:57:08Z"]
+        detalles:
+          type: array
+          items:
+            type: string
+          description: Lista opcional con la traza o errores específicos de validación de campos.
+
+webhooks:
+  contenidoSubidoCompletamente:
+    post:
+      summary: Notificar que una subida finalizó completamente (RNF-4)
+      description: |
+        Evento asíncrono emitido cuando una Subida es validada y marcada como 'Completada' (RF-P1).
+        Es principalmente informativo/interno; el siguiente paso relevante para otros contextos
+        es el evento 'assetListoParaPublicacion', una vez que el procesamiento técnico finaliza.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idSubida, idAsset, idCreador, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d"]
+                idSubida:
+                  type: string
+                  format: uuid
+                  examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
+                idAsset:
+                  type: string
+                  format: uuid
+                  description: Asset generado a partir de la subida completada.
+                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                idCreador:
+                  type: string
+                  format: uuid
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-15T21:50:00Z"]
+      responses:
+        '202':
+          description: Evento recibido y aceptado por el sistema receptor para su procesamiento asíncrono.
+        '500':
+          description: Error en el servicio receptor. El sistema de mensajería (Broker) reintentará el envío más tarde.
+
+  procesamientoFinalizado:
+    post:
+      summary: Notificar que el procesamiento técnico de un asset finalizó (RNF-4 / RF-P2)
+      description: |
+        Evento asíncrono emitido al finalizar el procesamiento técnico de un Asset, ya sea
+        con éxito o con fallo (RF-P2). Permite a sistemas internos y de monitoreo reaccionar
+        ante procesamientos fallidos antes de que el contenido avance hacia publicación.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idAsset, resultado, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
+                idAsset:
+                  type: string
+                  format: uuid
+                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                resultado:
+                  type: string
+                  enum: [Exito, Fallo]
+                  examples: ["Exito"]
+                calidadesGeneradas:
+                  type: array
+                  items:
+                    type: string
+                  examples: [["360p", "720p", "1080p"]]
+                motivoFallo:
+                  type: [string, "null"]
+                  examples: [null]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-15T22:05:00Z"]
+      responses:
+        '202':
+          description: Evento recibido y aceptado por el sistema receptor para su procesamiento asíncrono.
+        '500':
+          description: Error en el servicio receptor. El sistema de mensajería (Broker) reintentará el envío más tarde.
+
+  assetListoParaPublicacion:
+    post:
+      summary: Notificar que un asset está técnicamente listo para publicación editorial (RNF-4 / RF-P2)
+      description: |
+        Evento asíncrono emitido hacia el Contexto de Catálogo editorial y derechos cuando un Asset
+        completó su procesamiento exitosamente (RF-P2). Es el evento que dispara la posibilidad de que
+        Catálogo vincule este asset técnico con metadata editorial (título, descripción, tags) y eventualmente
+        lo publique. Este contexto no decide ni conoce la visibilidad pública resultante.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idAsset, idCreador, duracionSegundos, calidadesGeneradas, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"]
+                idAsset:
+                  type: string
+                  format: uuid
+                  description: Identificador técnico (videoAssetId) que Catálogo utilizará para vincular su propio ítem editorial (RNF-2).
+                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                idCreador:
+                  type: string
+                  format: uuid
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                duracionSegundos:
+                  type: integer
+                  minimum: 0
+                  examples: [842]
+                calidadesGeneradas:
+                  type: array
+                  items:
+                    type: string
+                  examples: [["360p", "720p", "1080p"]]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-15T22:06:00Z"]
+      responses:
+        '202':
+          description: Evento recibido y aceptado por el Contexto de Catálogo para su procesamiento asíncrono.
+        '500':
+          description: Error en el servicio receptor. El sistema de mensajería (Broker) reintentará el envío más tarde.
+
+  sesionReproduccionCompletada:
+    post:
+      summary: Notificar que una sesión de reproducción finalizó (RNF-4 / RF-P3)
+      description: |
+        Evento asíncrono emitido hacia el Contexto de Descubrimiento y personalización y el Contexto de
+        Audiencia, comunidad y engagement cuando una sesión de playback se marca como finalizada (RF-P3).
+        Descubrimiento lo consume como señal de interés (watch time); Audiencia lo utiliza para
+        registrar el historial de visualización del espectador.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idSesion, idAsset, idEspectador, segundosVistos, duracionSegundos, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"]
+                idSesion:
+                  type: string
+                  format: uuid
+                  examples: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
+                idAsset:
+                  type: string
+                  format: uuid
+                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                idEspectador:
+                  type: string
+                  format: uuid
+                  examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+                segundosVistos:
+                  type: integer
+                  minimum: 0
+                  examples: [780]
+                duracionSegundos:
+                  type: integer
+                  minimum: 0
+                  examples: [842]
+                calidadPredominante:
+                  type: string
+                  examples: ["1080p"]
+                interrupciones:
+                  type: integer
+                  minimum: 0
+                  examples: [2]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-15T22:20:00Z"]
+      responses:
+        '202':
+          description: Evento recibido y aceptado por los sistemas receptores para su procesamiento asíncrono.
+        '500':
+          description: Error en el servicio receptor. El sistema de mensajería (Broker) reintentará el envío más tarde.
+
+  transmisionVivoCambioEstado:
+    post:
+      summary: Notificar el inicio o finalización de una transmisión en vivo (RNF-4 / RF-P4)
+      description: |
+        Evento asíncrono emitido cuando una transmisión en vivo pasa a estado 'EnVivo' o 'Finalizada' (RF-P4).
+        Permite, por ejemplo, que el Contexto de Audiencia notifique a los suscriptores del canal que
+        el live comenzó, y que el Contexto de Catálogo conozca la disponibilidad de la grabación generada
+        (si aplica) para su eventual publicación editorial.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idTransmision, idCreador, estado, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b"]
+                idTransmision:
+                  type: string
+                  format: uuid
+                  examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
+                idCreador:
+                  type: string
+                  format: uuid
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                estado:
+                  $ref: '#/components/schemas/EstadoTransmisionVivo'
+                idAssetGrabacion:
+                  type: [string, "null"]
+                  format: uuid
+                  description: Presente únicamente cuando 'estado' es 'Finalizada' y se generó una grabación.
+                  examples: [null]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-15T20:00:00Z"]
+      responses:
+        '202':
+          description: Evento recibido y aceptado por los sistemas receptores para su procesamiento asíncrono.
+        '500':
+          description: Error en el servicio receptor. El sistema de mensajería (Broker) reintentará el envío más tarde.
