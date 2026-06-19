@@ -180,7 +180,7 @@ sequenceDiagram
     actor Espectador as Espectador (Frontend)
     participant C3 as C3: Descubrimiento
     participant C1 as C1: Publicación
-    participant C6 as C6: Publicidad (Nosotros)
+    participant C6 as C6: Publicidad 
     participant C5 as C5: Monetización
 
     %% --- ETAPA 1: DESCUBRIMIENTO ---
