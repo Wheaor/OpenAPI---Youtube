@@ -177,37 +177,33 @@ A continuación se modela el comportamiento dinámico y asíncrono del sistema a
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Espectador as Espectador (Frontend)
-    participant C3 as C3: Descubrimiento
-    participant C1 as C1: Publicación
-    participant C6 as C6: Publicidad 
+    participant C2 as C2: Catálogo
+    actor App as Frontend (Reproductor)
+    participant C6 as C6: Publicidad (Nosotros)
     participant C5 as C5: Monetización
 
-    %% --- ETAPA 1: DESCUBRIMIENTO ---
-    Espectador->>C3: GET /feeds/home
-    C3-->>Espectador: Retorna lista de videos recomendados
-    Espectador->>Espectador: Usuario hace Click en un video
+    %% --- INTEGRACIÓN ENTRANTE (Catálogo -> Publicidad) ---
+    Note over C2, C6: RNF-5: Sincronización asíncrona de elegibilidad (RF-F5)
+    C2->>C6: PUT /inventario/{idItemCatalogo} (esMonetizable, BrandSafety)
+    C6-->>C2: 200 OK
 
-    %% --- ETAPA 2: LA SUBASTA (CORE CONTEXTO 6) ---
-    Note over Espectador, C6: Oportunidad de Visualización (RF-F6)
-    Espectador->>C6: POST /subastas/decidir (idItemCatalogo, espectadorData)
-    critical Procesamiento de Subasta
-        C6->>C6: Filtrar InventarioContenido (esMonetizable && Seguro)
-        C6->>C6: Validar CriterioTargeting y pujaMaximaCPM
+    %% --- TRANSACCIÓN CORE (Frontend <-> Publicidad) ---
+    Note over App, C6: RF-F6: El usuario visualiza un video (Oportunidad)
+    App->>C6: POST /subastas/decidir (idItemCatalogo, datosEspectador)
+    
+    critical Motor Transaccional de Subasta
+        C6->>C6: Filtra inventario local y campañas activas
+        C6->>C6: Resuelve pujaMaximaCPM y targeting
     end
-    C6-->>Espectador: Retorna CreativoPublicitario + AdTransactionToken
+    
+    C6-->>App: 200 OK (Retorna CreativoPublicitario + AdTransactionToken)
 
-    %% --- ETAPA 3: PLAYBACK ---
-    Espectador->>C1: GET /playback/session
-    Espectador->>Espectador: El reproductor inyecta el video del anuncio
-    Espectador->>Espectador: El espectador mira el anuncio completo
+    Note over App, C6: RF-F7: El anuncio finaliza su reproducción
+    App->>C6: POST /telemetria/interacciones (Token, tipoInteraccion: Impresion)
+    C6->>C6: Descuenta saldo de la Campaña (Presupuesto)
+    C6-->>App: 201 Created
 
-    %% --- ETAPA 4: TELEMETRÍA E INGRESOS ---
-    Espectador->>C6: POST /telemetria/interacciones (Token, tipoInteraccion: Impresion)
-    C6-->>Espectador: 201 Created
-
-    %% --- INTEGRACIÓN ASÍNCRONA POR EVENTOS ---
-    Note over C6, C5: Desacoplamiento por mensajería (RNF-4 / RNF-5)
-    C6->>C5: Webhook: ingresoPublicitarioGenerado (idCanal, montoTotalPlataforma)
+    %% --- INTEGRACIÓN SALIENTE (Publicidad -> Monetización) ---
+    Note over C6, C5: RNF-4: Emisión de ingresos al ecosistema creador
+    C6-)C5: Webhook: ingresoPublicitarioGenerado (idCanal, montoTotal)
     C5-->>C6: 202 Accepted
-```
