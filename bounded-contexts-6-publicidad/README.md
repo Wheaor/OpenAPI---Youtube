@@ -179,7 +179,7 @@ sequenceDiagram
     autonumber
     participant C2 as C2: Catálogo
     actor App as Frontend (Reproductor)
-    participant C6 as C6: Publicidad (Nosotros)
+    participant C6 as C6: Publicidad 
     participant C5 as C5: Monetización
 
     %% --- INTEGRACIÓN ENTRANTE (Catálogo -> Publicidad) ---
