@@ -5,3 +5,34 @@ Gestionar el modelo de negocio, recaudación y distribución de ingresos de los 
 
 ---
 
+classDiagram
+    direction TB
+    class EstadoElegibilidad {
+        <<enumeration>>
+        Pendiente
+        Apto
+        Rechazado
+        Suspendido
+    }
+    class CuentaCreador {
+        -UUID idCanal
+        -EstadoElegibilidad estadoElegibilidad
+        -boolean monetizacionActivaGlobal
+        -double saldoDisponible
+    }
+    class SolicitudMonetizacion {
+        -UUID idSolicitud
+        -UUID idCanal
+        -DateTime fechaPostulacion
+        -int instantSuscriptores
+        -double instantHorasVisualizacion
+        -EstadoElegibilidad estadoResultado
+        -String motivoRechazo
+    }
+    class ControlMonetizacionVideo {
+        -UUID idItemCatalogo
+        -UUID idCanal
+        -boolean monetizacionHabilitada
+    }
+    CuentaCreador "1" *-- "0..*" SolicitudMonetizacion : registra
+    CuentaCreador "1" *-- "0..*" ControlMonetizacionVideo : gestiona
