@@ -7,7 +7,7 @@ Gestionar el negocio publicitario B2B de la plataforma. Permite a cuentas empres
 
 ## 2. Especificación OpenAPI
 El contrato formal de la API con sus endpoints, estructuras de datos (schemas), paginación y gestión de errores se encuentra en el siguiente archivo:
-* 📄 [Ver Especificación OpenAPI](./openapi.yaml)
+* 📄 [Ver Especificación OpenAPI](./openapi_publicidad.yaml)
 
 ---
 
