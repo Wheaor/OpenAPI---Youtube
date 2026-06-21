@@ -29,6 +29,12 @@ classDiagram
         Confirmado
         Pagado
     }
+    class EstadoReporte {
+        <<enumeration>>
+        Generando
+        Listo
+        Expirado
+    }
 
     %% --- DOMINIO: CUENTA Y ELEGIBILIDAD (RF-M1) ---
     class CuentaCreador {
@@ -85,7 +91,7 @@ classDiagram
         - mensajeAdjunto : String
     }
 
-    %% --- DOMINIO: LIBRO MAYOR CONTABLE Y REVENUE SHARE (RF-M3) ---
+    %% --- DOMINIO: LIBRO MAYOR CONTABLE (RF-M3) ---
     class RegistroIngreso {
         - idRegistro : UUID
         - idCanal : UUID
@@ -99,11 +105,44 @@ classDiagram
         - estado : EstadoIngreso
     }
 
+    %% --- DOMINIO: ANALÍTICA Y REPORTES (RF-M4) ---
+    class ResumenFinancieroPeriodo {
+        - idResumen : UUID
+        - idCanal : UUID
+        - periodoIdentificador : String
+        - totalIngresosCreador : Decimal
+        - totalIngresosPlataforma : Decimal
+        - fechaActualizacion : DateTime
+    }
+
+    class DesgloseIngresoVideo {
+        - idDesglose : UUID
+        - idResumen : UUID
+        - idItemCatalogo : UUID
+        - gananciaPorPublicidad : Decimal
+        - gananciaPorPropinas : Decimal
+        - vistasMonetizadasContabilizadas : Long
+        - rpmCalculado : Decimal
+    }
+
+    class ReporteExportable {
+        - idReporte : UUID
+        - idCanal : UUID
+        - periodoSolicitado : String
+        - fechaGeneracion : DateTime
+        - formatoDescarga : String
+        - urlDescarga : String
+        - estado : EstadoReporte
+    }
+
     %% --- RELACIONES ESTRUCTURALES ---
     CuentaCreador "1" *-- "0..*" SolicitudMonetizacion : registra
     CuentaCreador "1" *-- "0..*" ControlMonetizacionVideo : gestiona
     CuentaCreador "1" *-- "0..*" NivelMembresia : ofrece
     CuentaCreador "1" *-- "0..*" RegistroIngreso : acumula
+    CuentaCreador "1" *-- "0..*" ResumenFinancieroPeriodo : consolida
+    CuentaCreador "1" *-- "0..*" ReporteExportable : solicita
 
+    ResumenFinancieroPeriodo "1" *-- "0..*" DesgloseIngresoVideo : detalla_por_video
     NivelMembresia "1" <-- "0..*" SuscripcionMembresia : contrata
     ControlMonetizacionVideo "1" <-- "0..*" AportePropina : recibe
