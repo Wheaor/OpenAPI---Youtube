@@ -5,6 +5,7 @@ Gestionar el modelo de negocio, recaudación y distribución de ingresos de los 
 
 ---
 
+```mermaid
 classDiagram
     direction TB
     class EstadoElegibilidad {
