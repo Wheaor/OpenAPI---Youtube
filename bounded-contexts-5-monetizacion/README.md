@@ -5,6 +5,15 @@ Gestionar el modelo de negocio, recaudación y distribución de ingresos de los 
 
 ---
 
+## 2. Especificación OpenAPI
+El contrato formal de la API con sus endpoints transaccionales, webhooks de ingesta, estructuras de datos (schemas) contables y gestión de errores se encuentra en el siguiente archivo:
+* 📄 [Ver Especificación OpenAPI](./openapi_monetizacion.yaml)
+
+---
+
+## 3. Diagrama de Clases Conceptual
+A continuación se presenta el modelo de datos canónico y las relaciones estrictas para el ecosistema financiero y contable de los creadores:
+
 ```mermaid
 classDiagram
     direction TB
@@ -178,7 +187,7 @@ classDiagram
         - estado : EstadoRetiro
     }
 
-    %% --- RELACIONES ESTRUCTURALES ---
+    %% --- RELACIONES UML ESTRICTAS ---
     CuentaCreador "1" *-- "0..*" SolicitudMonetizacion : registra
     CuentaCreador "1" *-- "0..*" ControlMonetizacionVideo : gestiona
     CuentaCreador "1" *-- "0..*" NivelMembresia : ofrece
@@ -195,3 +204,65 @@ classDiagram
     ResumenFinancieroPeriodo "1" *-- "0..*" DesgloseIngresoVideo : detalla_por_video
     NivelMembresia "1" <-- "0..*" SuscripcionMembresia : contrata
     ControlMonetizacionVideo "1" <-- "0..*" AportePropina : recibe
+```
+
+---
+
+## 4. Diagrama de Secuencia
+
+A continuación se modela el comportamiento dinámico y la "ruta del dinero" a través del sistema. El diagrama detalla cómo Monetización (Contexto 5) consolida la ingesta asíncrona de ingresos provenientes de Publicidad (Contexto 6), procesa transacciones directas del espectador, sirve datos al tablero analítico y gestiona la validación de cumplimiento (*Compliance*) para emitir retiros mediante una pasarela externa.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Espectador as Espectador (Frontend)
+    actor Creador as Creador (Dashboard)
+    participant C6 as Publicidad (C6)
+    participant C5 as Monetización (C5)
+    participant Pasarela as Pasarela Externa (Stripe/Transbank)
+
+    %% --- RF-M3: FLUJO DE INGRESOS ASÍNCRONOS (PUBLICIDAD) ---
+    Note over C6, C5: RF-M3: Atribución asíncrona de ingresos
+    C6-)C5: Webhook: ingresoPublicitarioGenerado (montoTotalPlataforma)
+    critical Motor de Revenue Share
+        C5->>C5: Calcula montoCreador (Ej: 55%) y montoPlataforma (45%)
+        C5->>C5: Genera RegistroIngreso (Estado: Confirmado)
+        C5->>C5: Suma montoCreador a CuentaCreador.saldoDisponible
+    end
+    C5-->>C6: 202 Accepted
+
+    %% --- RF-M2 / RF-M3: FLUJO DE INGRESOS TRANSACCIONALES DIRECTOS ---
+    Note over Espectador, C5: RF-M2: Compra de productos de apoyo directo
+    Espectador->>C5: POST /propinas (idItemCatalogo, idUsuario, monto)
+    C5->>Pasarela: Procesar cobro de tarjeta
+    Pasarela-->>C5: Confirmación de cobro (200 OK)
+    
+    critical Registro de Aporte
+        C5->>C5: Registra AportePropina
+        C5->>C5: Genera RegistroIngreso (Revenue Share: 70/30)
+        C5->>C5: Suma montoCreador a CuentaCreador.saldoDisponible
+    end
+    C5-->>Espectador: 201 Created (Recibo emitido)
+
+    %% --- RF-M4: CONSULTA DE GANANCIAS ---
+    Note over Creador, C5: RF-M4: Tablero analítico (RPM, Resumenes)
+    Creador->>C5: GET /canales/{idCanal}/resumen-financiero?periodo=mes_actual
+    C5-->>Creador: 200 OK (Retorna ResumenFinancieroPeriodo precalculado)
+
+    %% --- RF-M5: SOLICITUD DE PAGO (PAYOUTS) ---
+    Note over Creador, Pasarela: RF-M5: Retiro de fondos a cuenta bancaria
+    Creador->>C5: POST /canales/{idCanal}/retiros (montoSolicitado)
+    
+    critical Validación de Compliance y Saldo
+        C5->>C5: Verifica PerfilFiscal.estado == Verificado
+        C5->>C5: Verifica CuentaCreador.saldoDisponible >= montoSolicitado
+        C5->>C5: Resta montoSolicitado de saldoDisponible
+        C5->>C5: Crea SolicitudRetiro (Estado: Procesando)
+    end
+    C5-->>Creador: 202 Accepted (Retiro en curso)
+
+    %% --- CONCILIACIÓN BANCARIA ASÍNCRONA ---
+    C5-)Pasarela: Emite orden de transferencia bancaria (SWIFT)
+    Pasarela--)C5: Webhook: transferencia_completada
+    C5->>C5: Actualiza SolicitudRetiro a Estado: Completado
+```
