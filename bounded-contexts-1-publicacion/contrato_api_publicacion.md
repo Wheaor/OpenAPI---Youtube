@@ -19,7 +19,7 @@ Estos IDs son los puntos de integración entre este contexto y los demás. Cuand
 | Identificador | Tipo | Generado en | Usado por |
 |---|---|---|---|
 | `idAsset` | UUID | Al completar una subida | Catálogo (para vincular metadata editorial), Publicidad (para verificar elegibilidad) |
-| `idCreador` | UUID | Recibido del sistema de identidad compartido | Todos los contextos |
+| `idCanal` | UUID | Recibido del sistema de identidad compartido | Todos los contextos |
 | `idTransmision` | UUID | Al configurar un live | Catálogo (para vincular grabación resultante), Audiencia (para notificar suscriptores) |
 
 ---
@@ -64,7 +64,7 @@ Estos son los endpoints que **otros contextos pueden llamar** cuando necesiten v
 
 | Método | Path | Qué hace | Quién lo usaría |
 |---|---|---|---|
-| `GET` | `/creadores/{idCreador}/assets` | Lista paginada de assets de un creador, filtrables por estado | Cliente del creador, Catálogo (verificación) |
+| `GET` | `/creadores/{idCanal}/assets` | Lista paginada de assets de un creador, filtrables por estado | Cliente del creador, Catálogo (verificación) |
 | `GET` | `/assets/{idAsset}` | Detalle técnico: duración, formatos disponibles, estado | Catálogo, Publicidad, cualquier contexto que necesite verificar disponibilidad |
 
 ---
@@ -82,7 +82,7 @@ Estos eventos se publican en el broker de mensajería. Los contextos interesados
   "idEvento": "uuid",
   "idSubida": "uuid",
   "idAsset": "uuid",
-  "idCreador": "uuid",
+  "idCanal": "uuid",
   "timestamp": "2026-06-15T21:50:00Z"
 }
 ```
@@ -106,7 +106,7 @@ Estos eventos se publican en el broker de mensajería. Los contextos interesados
 
 ---
 
-### `assetListoParaPublicacion` ⭐
+### `assetListoParaPublicacion` 
 **Cuándo se emite:** cuando el procesamiento finaliza con éxito. **Este es el evento más importante para Catálogo.**
 **Consumidores:** **Catálogo** (para poder vincular metadata editorial y eventualmente publicar el contenido).
 
@@ -114,7 +114,7 @@ Estos eventos se publican en el broker de mensajería. Los contextos interesados
 {
   "idEvento": "uuid",
   "idAsset": "uuid",
-  "idCreador": "uuid",
+  "idCanal": "uuid",
   "duracionSegundos": 842,
   "calidadesGeneradas": ["360p", "720p", "1080p"],
   "timestamp": "2026-06-15T22:06:00Z"
@@ -134,7 +134,7 @@ Estos eventos se publican en el broker de mensajería. Los contextos interesados
   "idEvento": "uuid",
   "idSesion": "uuid",
   "idAsset": "uuid",
-  "idEspectador": "uuid",
+  "idUsuario": "uuid",
   "segundosVistos": 780,
   "duracionSegundos": 842,
   "calidadPredominante": "1080p",
@@ -153,7 +153,7 @@ Estos eventos se publican en el broker de mensajería. Los contextos interesados
 {
   "idEvento": "uuid",
   "idTransmision": "uuid",
-  "idCreador": "uuid",
+  "idCanal": "uuid",
   "estado": "EnVivo | Finalizada",
   "idAssetGrabacion": null,
   "timestamp": "2026-06-15T20:00:00Z"

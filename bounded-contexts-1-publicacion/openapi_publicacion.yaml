@@ -28,9 +28,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [idCreador, nombreArchivo, tamanoBytesTotal, tipoSubida]
+              required: [idCanal, nombreArchivo, tamanoBytesTotal, tipoSubida]
               properties:
-                idCreador:
+                idCanal:
                   type: string
                   format: uuid
                   examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -320,13 +320,13 @@ paths:
           application/json:
             schema:
               type: object
-              required: [idAsset, idEspectador, calidadInicial, dispositivo]
+              required: [idAsset, idUsuario, calidadInicial, dispositivo]
               properties:
                 idAsset:
                   type: string
                   format: uuid
                   examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-                idEspectador:
+                idUsuario:
                   type: string
                   format: uuid
                   examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
@@ -417,9 +417,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [idCreador, titulo]
+              required: [idCanal, titulo]
               properties:
-                idCreador:
+                idCanal:
                   type: string
                   format: uuid
                   examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -488,13 +488,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /creadores/{idCreador}/assets:
+  /creadores/{idCanal}/assets:
     get:
       summary: Listar los contenidos técnicos asociados a un creador
       description: Retorna un listado paginado de los assets técnicos (subidos y/o procesados) que pertenecen a un creador (RF-P5 / RNF-3).
       operationId: listarAssetsPorCreador
       parameters:
-        - name: idCreador
+        - name: idCanal
           in: path
           required: true
           schema:
@@ -617,14 +617,14 @@ components:
     # --- MODELOS DE DATOS ---
     Subida:
       type: object
-      required: [idSubida, idCreador, nombreArchivo, tamanoBytesTotal, tipoSubida, estado]
+      required: [idSubida, idCanal, nombreArchivo, tamanoBytesTotal, tipoSubida, estado]
       properties:
         idSubida:
           type: string
           format: uuid
           readOnly: true
           examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
-        idCreador:
+        idCanal:
           type: string
           format: uuid
           examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -658,7 +658,7 @@ components:
 
     Asset:
       type: object
-      required: [idAsset, idCreador, idSubidaOrigen, duracionSegundos, estado]
+      required: [idAsset, idCanal, idSubidaOrigen, duracionSegundos, estado]
       properties:
         idAsset:
           type: string
@@ -666,7 +666,7 @@ components:
           readOnly: true
           description: Identificador técnico del contenido (videoAssetId), referenciado por el Contexto de Catálogo (RNF-2).
           examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-        idCreador:
+        idCanal:
           type: string
           format: uuid
           examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -759,7 +759,7 @@ components:
 
     SesionReproduccion:
       type: object
-      required: [idSesion, idAsset, idEspectador, dispositivo, estado]
+      required: [idSesion, idAsset, idUsuario, dispositivo, estado]
       properties:
         idSesion:
           type: string
@@ -770,7 +770,7 @@ components:
           type: string
           format: uuid
           examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-        idEspectador:
+        idUsuario:
           type: string
           format: uuid
           examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
@@ -797,14 +797,14 @@ components:
 
     TransmisionVivo:
       type: object
-      required: [idTransmision, idCreador, titulo, estado, ingestUrl, claveStream]
+      required: [idTransmision, idCanal, titulo, estado, ingestUrl, claveStream]
       properties:
         idTransmision:
           type: string
           format: uuid
           readOnly: true
           examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
-        idCreador:
+        idCanal:
           type: string
           format: uuid
           examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -870,7 +870,7 @@ webhooks:
           application/json:
             schema:
               type: object
-              required: [idEvento, idSubida, idAsset, idCreador, timestamp]
+              required: [idEvento, idSubida, idAsset, idCanal, timestamp]
               properties:
                 idEvento:
                   type: string
@@ -885,7 +885,7 @@ webhooks:
                   format: uuid
                   description: Asset generado a partir de la subida completada.
                   examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-                idCreador:
+                idCanal:
                   type: string
                   format: uuid
                   examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -958,7 +958,7 @@ webhooks:
           application/json:
             schema:
               type: object
-              required: [idEvento, idAsset, idCreador, duracionSegundos, calidadesGeneradas, timestamp]
+              required: [idEvento, idAsset, idCanal, duracionSegundos, calidadesGeneradas, timestamp]
               properties:
                 idEvento:
                   type: string
@@ -969,7 +969,7 @@ webhooks:
                   format: uuid
                   description: Identificador técnico (videoAssetId) que Catálogo utilizará para vincular su propio ítem editorial (RNF-2).
                   examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-                idCreador:
+                idCanal:
                   type: string
                   format: uuid
                   examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
@@ -1006,7 +1006,7 @@ webhooks:
           application/json:
             schema:
               type: object
-              required: [idEvento, idSesion, idAsset, idEspectador, segundosVistos, duracionSegundos, timestamp]
+              required: [idEvento, idSesion, idAsset, idUsuario, segundosVistos, duracionSegundos, timestamp]
               properties:
                 idEvento:
                   type: string
@@ -1020,7 +1020,7 @@ webhooks:
                   type: string
                   format: uuid
                   examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-                idEspectador:
+                idUsuario:
                   type: string
                   format: uuid
                   examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
@@ -1063,7 +1063,7 @@ webhooks:
           application/json:
             schema:
               type: object
-              required: [idEvento, idTransmision, idCreador, estado, timestamp]
+              required: [idEvento, idTransmision, idCanal, estado, timestamp]
               properties:
                 idEvento:
                   type: string
@@ -1073,7 +1073,7 @@ webhooks:
                   type: string
                   format: uuid
                   examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
-                idCreador:
+                idCanal:
                   type: string
                   format: uuid
                   examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
