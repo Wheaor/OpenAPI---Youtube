@@ -16,7 +16,52 @@ A continuación se presenta el modelo de datos canónico y las relaciones estric
 
 ```mermaid
 classDiagram
-    direction LR
+    direction TB
+
+    class EstadoSubida {
+        <<enumeration>>
+        EnProgreso
+        Completada
+        Cancelada
+        Fallida
+    }
+
+    class EstadoProcesamiento {
+        <<enumeration>>
+        Pendiente
+        EnCurso
+        Completado
+        Fallido
+    }
+
+    class EstadoTransmisionVivo {
+        <<enumeration>>
+        Configurada
+        EnVivo
+        Pausada
+        Finalizada
+    }
+
+    class EstadoSesionReproduccion {
+        <<enumeration>>
+        Activa
+        Finalizada
+    }
+
+    class TipoSubida {
+        <<enumeration>>
+        Completa
+        PorPartes
+    }
+
+    class Dispositivo {
+        <<enumeration>>
+        Movil
+        Tablet
+        Desktop
+        SmartTV
+        Consola
+    }
 
     class Asset {
         -idAsset: UUID
@@ -100,50 +145,7 @@ classDiagram
         +UUID idCanal
     }
 
-    class EstadoSubida {
-        <<enumeration>>
-        EnProgreso
-        Completada
-        Cancelada
-        Fallida
-    }
-
-    class EstadoProcesamiento {
-        <<enumeration>>
-        Pendiente
-        EnCurso
-        Completado
-        Fallido
-    }
-
-    class EstadoTransmisionVivo {
-        <<enumeration>>
-        Configurada
-        EnVivo
-        Pausada
-        Finalizada
-    }
-
-    class EstadoSesionReproduccion {
-        <<enumeration>>
-        Activa
-        Finalizada
-    }
-
-    class TipoSubida {
-        <<enumeration>>
-        Completa
-        PorPartes
-    }
-
-    class Dispositivo {
-        <<enumeration>>
-        Movil
-        Tablet
-        Desktop
-        SmartTV
-        Consola
-    }
+    
 
     Subida "1" --> "0..1" Asset : origina
     TransmisionVivo "1" --> "0..1" Asset : puede generar
@@ -155,13 +157,7 @@ classDiagram
     Subida "*" --> "1" Canal : pertenece a
     TransmisionVivo "*" --> "1" Canal : pertenece a
 
-    Subida ..> EstadoSubida : usa
-    Subida ..> TipoSubida : usa
-    Asset ..> EstadoProcesamiento : usa
-    Procesamiento ..> EstadoProcesamiento : usa
-    TransmisionVivo ..> EstadoTransmisionVivo : usa
-    SesionReproduccion ..> EstadoSesionReproduccion : usa
-    SesionReproduccion ..> Dispositivo : usa
+    
 
 ```
 
