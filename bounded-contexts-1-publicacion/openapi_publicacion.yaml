@@ -2,17 +2,13 @@ openapi: 3.1.0
 info:
   title: API de Publicación y Distribución de Contenido - YouTube
   version: 1.0.0
-  description: |
-    ### Contexto de Dominio 1: Publicación y Distribución de Contenido
-    Gestión del ciclo de vida técnico del video de manera desacoplada.
-    Este servicio es responsable de:
-    * Iniciar, recibir y validar la Subida de archivos de video por parte de los creadores (RF-P1).
-    * Disparar y monitorear el Procesamiento técnico, generando múltiples calidades del mismo Asset (RF-P2).
-    * Entregar la información de Reproducción adaptada a dispositivo, ancho de banda y región, y registrar sesiones de playback (RF-P3).
-    * Configurar, iniciar y finalizar Transmisiones en Vivo, generando una versión grabada al término del live (RF-P4).
-    * Exponer el listado y detalle técnico de los Assets asociados a un creador (RF-P5).
 
-    Este contexto conoce al video como **archivo/stream**, no como producto editorial: no decide su visibilidad pública ni gestiona su metadata (título, descripción, tags), responsabilidad exclusiva del Contexto de Catálogo.
+
+  #Descripción de Responsabilidad
+  description: |   
+    Gestionar el ciclo de vida técnico del contenido de video en la plataforma. Permite a los creadores iniciar una Subida de su archivo (completa o por partes), monitoreando su progreso hasta su validación. Una vez finalizada la subida, el sistema dispara automáticamente el Procesamiento del archivo, generando múltiples calidades del mismo Asset (360p, 720p, 1080p) y permitiendo reintentar procesamientos fallidos. Además, administra las Sesiones de Reproducción, entregando la información necesaria para reproducir un asset según el dispositivo, ancho de banda y región del espectador, y capturando métricas técnicas de visualización (duración vista, calidad, interrupciones). El contexto también soporta Transmisiones en Vivo, proveyendo los datos de conexión para emitir desde software externo y permitiendo iniciar, pausar y finalizar la transmisión, con la posibilidad de generar una versión grabada al término del live. Notifica a otros contextos cuando un asset está técnicamente listo para ser publicado, sin tomar ninguna decisión sobre su visibilidad pública ni gestionar su metadata editorial (título, descripción, tags).
+
+
   contact:
     name: Equipo de Arquitectura de Software - UOH 2026
 
