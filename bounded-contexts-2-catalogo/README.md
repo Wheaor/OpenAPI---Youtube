@@ -204,3 +204,58 @@ classDiagram
 ## 4. Diagrama de Secuencia
 
 A continuación se modela el comportamiento dinámico del sistema durante el escenario integrador exigido por la cátedra, en la porción donde Catálogo Editorial y Derechos (Contexto 2) actúa como protagonista. El diagrama detalla cómo Catálogo consume de forma asíncrona el evento "assetListoParaPublicacion" emitido por Publicación y Distribución de Contenido (Contexto 1) para habilitar la creación del ítem editorial, gestiona el ciclo de vida completo del contenido desde su estado Borrador hasta Publicado (incluyendo la validación interna de restricciones bloqueantes), y finalmente notifica en paralelo y de manera desacoplada a Descubrimiento y Personalización (Contexto 3), Monetización del Ecosistema Creador (Contexto 5) y Publicidad y Marketplace de Anunciantes (Contexto 6) mediante el evento contenidoPublicado, exponiendo además una consulta síncrona de visibilidad que permite a los contextos consumidores confirmar la elegibilidad del contenido frente a la consistencia eventual del sistema.
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    actor Creador
+    participant Pub as Contexto Publicación
+    participant Cat as Contexto Catálogo
+    participant Des as Contexto Descubrimiento
+    participant Mon as Contexto Monetización
+    participant Adv as Contexto Publicidad
+
+    %% ── FASE 1: Evento entrante ──
+    Pub ->> Cat: «evento» assetListoParaPublicacion<br/>{idAsset, idCanal, duracionSegundos, calidadesGeneradas}
+    Cat -->> Pub: 202 Accepted
+    Note over Cat: Registra idAsset como disponible<br/>para publicación editorial (RNF-2)
+
+    %% ── FASE 2: Creación del ítem en borrador ──
+    Creador ->> Cat: POST /contenidos<br/>{idAsset, idCanal, titulo, descripcion, tags, categoria}
+    Cat ->> Cat: Validar idAsset registrado y sin ítem previo
+    alt Asset no disponible o ya vinculado
+        Cat -->> Creador: 400 / 409 {codigo: ASSET_NO_DISPONIBLE / ASSET_YA_VINCULADO}
+    else Válido
+        Cat -->> Creador: 201 Created — ItemCatalogo {estadoVisibilidad: Borrador}
+    end
+
+    %% ── FASE 3: Publicación ──
+    Creador ->> Cat: PATCH /contenidos/{idItemCatalogo}/estado<br/>{estadoVisibilidad: "Publicado"}
+    Cat ->> Cat: Verificar transición válida y sin restricciones bloqueantes
+    alt Restricción bloqueante activa
+        Cat -->> Creador: 400 {codigo: RESTRICCION_BLOQUEANTE_ACTIVA}
+    else Sin restricciones bloqueantes
+        Cat ->> Cat: estadoVisibilidad = Publicado · fechaPublicacion = now()
+        Cat -->> Creador: 200 OK — ItemCatalogo {estadoVisibilidad: Publicado}
+
+        %% ── FASE 4: Notificación asíncrona ──
+        Note over Cat,Adv: Emisión paralela del evento contenidoPublicado (RNF-4)
+        par
+            Cat -->> Des: «evento» contenidoPublicado<br/>{idItemCatalogo, idAsset, idCanal, titulo, categoria, restriccionesActivas}
+            Note over Des: Indexa para búsqueda y feeds
+        and
+            Cat -->> Mon: «evento» contenidoPublicado<br/>{idItemCatalogo, idAsset, idCanal, titulo, categoria, restriccionesActivas}
+            Note over Mon: Habilita ítem para ingresos del creador
+        and
+            Cat -->> Adv: «evento» contenidoPublicado<br/>{idItemCatalogo, idAsset, idCanal, titulo, categoria, restriccionesActivas}
+            Note over Adv: Incorpora al inventario publicitario
+        end
+    end
+
+    %% ── FASE 5: Consulta síncrona de visibilidad ──
+    Note over Des,Cat: Consulta síncrona para confirmar visibilidad ante consistencia eventual (RNF-5)
+    Des ->> Cat: GET /contenidos/{idItemCatalogo}/visibilidad?pais=CL&edad=25
+    Cat ->> Cat: Evaluar estado, bloqueos geográficos y restricción etaria
+    Cat -->> Des: 200 OK {visible: true, estadoVisibilidad: Publicado}
+```
