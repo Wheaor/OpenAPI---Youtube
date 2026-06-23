@@ -76,10 +76,12 @@ sequenceDiagram
     C5->>C5: Aplica Revenue Share (Regla contable interna)
 ```
 
-### Justificación del Escenario Integrador
-
-1. **Obtener recomendación:** El cliente contacta a **Descubrimiento (C3)** para obtener su feed personalizado. C3 retorna solo referencias, no el archivo de video.
-2. **Validar que el contenido es visible:** Antes de reproducir, el cliente consulta a **Catálogo (C2)** para asegurar que el video no ha sido restringido por edad o geolocalización en los últimos milisegundos.
-3. **Elegir anuncio:** Se ejecuta la subasta en tiempo real en **Publicidad (C6)**.
-4. **Reproducir video:** El cliente establece la sesión de streaming con **Publicación (C1)**, el único contexto que maneja el ancho de banda y los bytes del archivo.
-5. **Registrar Like:** La interacción social ocurre en **Audiencia (C4)**. C4 emite un evento asíncrono para que C3 actualice sus algoritmos de recomendación en segundo plano.
+### Justificación de la Arquitectura
+El flujo detallado prueba la resiliencia del sistema:
+1. **Obtener recomendación:** El cliente contacta a **Descubrimiento (C3)** para obtener su feed personalizado.
+2. **Validar que el contenido es visible:** Antes de reproducir, el cliente consulta a **Catálogo (C2)** para asegurar que el video no ha sido restringido por edad o políticas de moderación.
+3. **Elegir anuncio:** Se ejecuta la subasta programática en tiempo real en **Publicidad (C6)**.
+4. **Reproducir video:** El cliente establece la sesión con **Publicación (C1)**, el único contexto que maneja bytes, resoluciones y ancho de banda.
+5. **Registrar Like:** La interacción social ocurre en **Audiencia (C4)**. C4 emite un evento asíncrono para que C3 actualice sus algoritmos.
+6. **Registrar watch time:** Al finalizar la reproducción, **Publicación (C1)** dispara un webhook asíncrono. **Descubrimiento (C3)** lo captura para medir retención, y **Audiencia (C4)** para armar el historial del usuario.
+7. **Atribuir ingreso al creador:** Una vez servido el comercial, **Publicidad (C6)** emite el evento financiero asíncrono hacia **Monetización (C5)**, quien consolida el balance contable del creador.
