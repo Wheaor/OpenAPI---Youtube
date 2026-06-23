@@ -81,7 +81,6 @@ Nuestros eventos informan sobre cambios en el estado comercial.
 
 ## Lo que este contexto NO HACE (Prevención de Acoplamiento)
 
-Si tu equipo necesita algo de esta lista, **no llamen a Monetización**.
 
 | Responsabilidad prohibida en este dominio | Bounded Context al que debes llamar |
 |---|---|
