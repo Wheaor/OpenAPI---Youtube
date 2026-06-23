@@ -198,3 +198,9 @@ classDiagram
 
 
 ```
+
+---
+
+## 4. Diagrama de Secuencia
+
+A continuación se modela el comportamiento dinámico del sistema durante el escenario integrador exigido por la cátedra, en la porción donde Catálogo Editorial y Derechos (Contexto 2) actúa como protagonista. El diagrama detalla cómo Catálogo consume de forma asíncrona el evento "assetListoParaPublicacion" emitido por Publicación y Distribución de Contenido (Contexto 1) para habilitar la creación del ítem editorial, gestiona el ciclo de vida completo del contenido desde su estado Borrador hasta Publicado (incluyendo la validación interna de restricciones bloqueantes), y finalmente notifica en paralelo y de manera desacoplada a Descubrimiento y Personalización (Contexto 3), Monetización del Ecosistema Creador (Contexto 5) y Publicidad y Marketplace de Anunciantes (Contexto 6) mediante el evento contenidoPublicado, exponiendo además una consulta síncrona de visibilidad que permite a los contextos consumidores confirmar la elegibilidad del contenido frente a la consistencia eventual del sistema.
