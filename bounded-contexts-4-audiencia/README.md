@@ -136,9 +136,9 @@ classDiagram
 
     Suscripcion --> Notificacion : genera
 
-    Reaccion --> Comentario : engagement
+    Reaccion --> Comentario : compromiso
 
-    Reaccion --> PublicacionComunidad : engagement
+    Reaccion --> PublicacionComunidad : compromiso
 
     HistorialVisualizacion --> WatchLater : referencia
 
