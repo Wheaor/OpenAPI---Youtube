@@ -74,3 +74,12 @@ sequenceDiagram
     Note over C6, C5: Atribución financiera B2B -> B2C
     C6-)C5: Webhook: ingresoPublicitarioGenerado
     C5->>C5: Aplica Revenue Share (Regla contable interna)
+```
+
+### Justificación del Escenario Integrador
+
+1. **Obtener recomendación:** El cliente contacta a **Descubrimiento (C3)** para obtener su feed personalizado. C3 retorna solo referencias, no el archivo de video.
+2. **Validar que el contenido es visible:** Antes de reproducir, el cliente consulta a **Catálogo (C2)** para asegurar que el video no ha sido restringido por edad o geolocalización en los últimos milisegundos.
+3. **Elegir anuncio:** Se ejecuta la subasta en tiempo real en **Publicidad (C6)**.
+4. **Reproducir video:** El cliente establece la sesión de streaming con **Publicación (C1)**, el único contexto que maneja el ancho de banda y los bytes del archivo.
+5. **Registrar Like:** La interacción social ocurre en **Audiencia (C4)**. C4 emite un evento asíncrono para que C3 actualice sus algoritmos de recomendación en segundo plano.
