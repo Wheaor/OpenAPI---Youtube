@@ -1,0 +1,509 @@
+openapi: 3.0.4
+
+info:
+  title: Audiencia, Comunidad y Engagement API
+  version: 1.0.0
+  description: |
+    Bounded Context 4 - Audiencia, Comunidad y Engagement.
+    Gestiona suscripciones, reacciones, comentarios, notificaciones,
+    historial de visualización y publicaciones de comunidad.
+
+servers:
+  - url: /api/v1/audience
+
+tags:
+  - name: Subscriptions
+  - name: Reactions
+  - name: Comments
+  - name: Notifications
+  - name: History
+  - name: Community
+  - name: Moderation
+
+paths:
+
+  # =========================
+  # SUSCRIPCIONES
+  # =========================
+
+  /subscriptions:
+    post:
+      tags: [Subscriptions]
+      summary: Suscribirse a un canal
+      operationId: subscribeChannel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionRequest"
+      responses:
+        "201":
+          description: Created
+
+  /subscriptions/{userId}:
+    get:
+      tags: [Subscriptions]
+      summary: Listar canales suscritos por usuario
+      operationId: getUserSubscriptions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Suscripcion"
+
+  /subscriptions/{subscriptionId}:
+    delete:
+      tags: [Subscriptions]
+      summary: Cancelar suscripción
+      operationId: unsubscribeChannel
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  # =========================
+  # REACCIONES
+  # =========================
+
+  /reactions:
+    post:
+      tags: [Reactions]
+      summary: Crear o actualizar reacción
+      operationId: upsertReaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionRequest"
+      responses:
+        "201":
+          description: Created/Updated
+
+  /reactions/{userId}/{contentId}:
+    delete:
+      tags: [Reactions]
+      summary: Eliminar reacción
+      operationId: deleteReaction
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /reactions/{contentId}:
+    get:
+      tags: [Reactions]
+      summary: Obtener conteo de reacciones
+      operationId: getReactionStats
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionStats"
+
+  # =========================
+  # COMENTARIOS
+  # =========================
+
+  /comments:
+    post:
+      tags: [Comments]
+      summary: Crear comentario
+      operationId: createComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentRequest"
+      responses:
+        "201":
+          description: Created
+
+    get:
+      tags: [Comments]
+      summary: Listar comentarios de un contenido
+      operationId: listComments
+      parameters:
+        - name: contentId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [recent, top]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comentario"
+
+  /comments/{commentId}:
+    put:
+      tags: [Comments]
+      summary: Editar comentario
+      operationId: editComment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+      responses:
+        "200":
+          description: Updated
+
+    delete:
+      tags: [Comments]
+      summary: Eliminar comentario
+      operationId: deleteComment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /comments/{commentId}/report:
+    post:
+      tags: [Moderation]
+      summary: Reportar comentario
+      operationId: reportComment
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportRequest"
+      responses:
+        "201":
+          description: Reported
+
+  # =========================
+  # NOTIFICACIONES
+  # =========================
+
+  /notifications/{userId}:
+    get:
+      tags: [Notifications]
+      summary: Listar notificaciones
+      operationId: getNotifications
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notificacion"
+
+  /notifications/{notificationId}/read:
+    post:
+      tags: [Notifications]
+      summary: Marcar notificación como leída
+      operationId: markNotificationRead
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated
+
+  # =========================
+  # HISTORIAL
+  # =========================
+
+  /history/{userId}:
+    get:
+      tags: [History]
+      summary: Historial de visualización
+      operationId: getWatchHistory
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistorialVisualizacion"
+
+  /watchlater:
+    post:
+      tags: [History]
+      summary: Guardar para ver después
+      operationId: addWatchLater
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchLaterRequest"
+      responses:
+        "201":
+          description: Created
+
+  # =========================
+  # COMUNIDAD
+  # =========================
+
+  /community-posts:
+    post:
+      tags: [Community]
+      summary: Crear publicación de comunidad
+      operationId: createCommunityPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityPostRequest"
+      responses:
+        "201":
+          description: Created
+
+  /community-posts/{channelId}:
+    get:
+      tags: [Community]
+      summary: Listar posts de comunidad
+      operationId: listCommunityPosts
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicacionComunidad"
+
+# =========================
+# SCHEMAS
+# =========================
+
+components:
+  schemas:
+
+    Suscripcion:
+      type: object
+      required: [idSuscripcion, idUsuario, idCanal]
+      properties:
+        idSuscripcion:
+          type: string
+        idUsuario:
+          type: string
+        idCanal:
+          type: string
+        fechaSuscripcion:
+          type: string
+          format: date-time
+
+    SubscriptionRequest:
+      type: object
+      required: [idUsuario, idCanal]
+      properties:
+        idUsuario:
+          type: string
+        idCanal:
+          type: string
+
+    ReactionRequest:
+      type: object
+      required: [userId, contentId, type]
+      properties:
+        userId:
+          type: string
+        contentId:
+          type: string
+        type:
+          type: string
+          enum: [Like, Dislike]
+
+    ReactionStats:
+      type: object
+      properties:
+        contentId:
+          type: string
+        likes:
+          type: integer
+        dislikes:
+          type: integer
+
+    Comentario:
+      type: object
+      required: [idComentario, idContenido, idAutor, texto]
+      properties:
+        idComentario:
+          type: string
+        idContenido:
+          type: string
+        idAutor:
+          type: string
+        texto:
+          type: string
+        fechaCreacion:
+          type: string
+          format: date-time
+        fijado:
+          type: boolean
+
+    CommentRequest:
+      type: object
+      required: [idContenido, idAutor, texto]
+      properties:
+        idContenido:
+          type: string
+        idAutor:
+          type: string
+        texto:
+          type: string
+        parentId:
+          type: string
+
+    ReportRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    Notificacion:
+      type: object
+      properties:
+        idNotificacion:
+          type: string
+        idUsuario:
+          type: string
+        mensaje:
+          type: string
+        estado:
+          type: string
+          enum: [NoLeida, Leida]
+        fechaCreacion:
+          type: string
+          format: date-time
+
+    HistorialVisualizacion:
+      type: object
+      properties:
+        idHistorial:
+          type: string
+        idUsuario:
+          type: string
+        idContenido:
+          type: string
+        fechaVisualizacion:
+          type: string
+          format: date-time
+
+    WatchLaterRequest:
+      type: object
+      required: [idUsuario, idContenido]
+      properties:
+        idUsuario:
+          type: string
+        idContenido:
+          type: string
+
+    PublicacionComunidad:
+      type: object
+      properties:
+        idPublicacion:
+          type: string
+        idCanal:
+          type: string
+        contenido:
+          type: string
+        fechaPublicacion:
+          type: string
+          format: date-time
+
+    CommunityPostRequest:
+      type: object
+      required: [idCanal, contenido]
+      properties:
+        idCanal:
+          type: string
+        contenido:
+          type: string
