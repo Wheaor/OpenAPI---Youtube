@@ -75,3 +75,18 @@ Nuestros eventos informan sobre cambios en el estado comercial.
   "motivoRechazo": null,
   "timestamp": "2026-06-21T09:00:00Z"
 }
+```
+
+---
+
+## Lo que este contexto NO HACE (Prevención de Acoplamiento)
+
+Si tu equipo necesita algo de esta lista, **no llamen a Monetización**.
+
+| Responsabilidad prohibida en este dominio | Bounded Context al que debes llamar |
+|---|---|
+| Contar las "visualizaciones" de un video. | Descubrimiento (C3) / Publicación (C1) |
+| Saber si un video tiene reclamos de Copyright. | Catálogo editorial y derechos (C2) |
+| Cobrarle dinero a una marca o anunciante. | Publicidad y Marketplace (C6) |
+| Guardar el título, descripción o miniatura. | Catálogo editorial y derechos (C2) |
+| Suspender la cuenta de un usuario por insultar en chat. | Audiencia, comunidad y engagement (C4) |
