@@ -24,119 +24,106 @@ El contrato formal de la API con sus endpoints, estructuras de datos (schemas), 
 
 ```mermaid
 classDiagram
-    direction TB
+direction TB
 
-    %% --- ENUMERACIONES ---
-    class TipoReaccion {
-        <<enumeration>>
-        Like
-        Dislike
-    }
+class TipoReaccion {
+  <<enumeration>>
+  Like
+  Dislike
+}
 
-    class EstadoNotificacion {
-        <<enumeration>>
-        NoLeida
-        Leida
-    }
+class EstadoNotificacion {
+  <<enumeration>>
+  NoLeida
+  Leida
+}
 
-    class EstadoReporte {
-        <<enumeration>>
-        Pendiente
-        Revisado
-        Resuelto
-        Rechazado
-    }
+class EstadoReporte {
+  <<enumeration>>
+  Pendiente
+  Revisado
+  Resuelto
+  Rechazado
+}
 
-    %% --- SUSCRIPCIONES ---
-    class Suscripcion {
-        - idSuscripcion : UUID
-        - idUsuario : UUID
-        - idCanal : UUID
-        - fechaSuscripcion : DateTime
-        + cancelar()
-    }
+class Suscripcion {
+  - idSuscripcion : UUID
+  - idUsuario : UUID
+  - idCanal : UUID
+  - fechaSuscripcion : DateTime
+  + cancelar()
+}
 
-    %% --- REACCIONES ---
-    class Reaccion {
-        - idReaccion : UUID
-        - idUsuario : UUID
-        - idItemCatalogo : UUID
-        - tipo : TipoReaccion
-        - fechaRegistro : DateTime
-    }
+class Reaccion {
+  - idReaccion : UUID
+  - idUsuario : UUID
+  - idItemCatalogo : UUID
+  - tipo : TipoReaccion
+  - fechaRegistro : DateTime
+}
 
-    %% --- COMENTARIOS ---
-    class Comentario {
-        - idComentario : UUID
-        - idItemCatalogo : UUID
-        - idUsuario : UUID
-        - texto : String
-        - fechaCreacion : DateTime
-        - fijado : Boolean
-        + editar()
-        + eliminar()
-    }
+class Comentario {
+  - idComentario : UUID
+  - idItemCatalogo : UUID
+  - idUsuario : UUID
+  - texto : String
+  - fechaCreacion : DateTime
+  - fijado : Boolean
+  + editar()
+  + eliminar()
+}
 
-    class RespuestaComentario {
-        - idRespuesta : UUID
-        - idComentarioPadre : UUID
-        - idUsuario : UUID
-        - texto : String
-        - fechaCreacion : DateTime
-    }
+class RespuestaComentario {
+  - idRespuesta : UUID
+  - idComentarioPadre : UUID
+  - idUsuario : UUID
+  - texto : String
+  - fechaCreacion : DateTime
+}
 
-    class ReporteComentario {
-        - idReporte : UUID
-        - motivo : String
-        - estado : EstadoReporte
-        - fechaReporte : DateTime
-    }
+class ReporteComentario {
+  - idReporte : UUID
+  - motivo : String
+  - estado : EstadoReporte
+  - fechaReporte : DateTime
+}
 
-    %% --- COMUNIDAD ---
-    class PublicacionComunidad {
-        - idPublicacion : UUID
-        - idCanal : UUID
-        - contenido : String
-        - fechaPublicacion : DateTime
-    }
+class PublicacionComunidad {
+  - idPublicacion : UUID
+  - idCanal : UUID
+  - contenido : String
+  - fechaPublicacion : DateTime
+}
 
-    %% --- NOTIFICACIONES ---
-    class Notificacion {
-        - idNotificacion : UUID
-        - idUsuario : UUID
-        - mensaje : String
-        - estado : EstadoNotificacion
-        - fechaCreacion : DateTime
-        + marcarLeida()
-    }
+class Notificacion {
+  - idNotificacion : UUID
+  - idUsuario : UUID
+  - mensaje : String
+  - estado : EstadoNotificacion
+  - fechaCreacion : DateTime
+  + marcarLeida()
+}
 
-    %% --- HISTORIAL ---
-    class HistorialVisualizacion {
-        - idHistorial : UUID
-        - idUsuario : UUID
-        - idItemCatalogo : UUID
-        - fechaVisualizacion : DateTime
-    }
+class HistorialVisualizacion {
+  - idHistorial : UUID
+  - idUsuario : UUID
+  - idItemCatalogo : UUID
+  - fechaVisualizacion : DateTime
+}
 
-    class VerMasTarde {
-        - idRegistro : UUID
-        - idUsuario : UUID
-        - idItemCatalogo : UUID
-        - fechaAgregado : DateTime
-    }
+class VerMasTarde {
+  - idRegistro : UUID
+  - idUsuario : UUID
+  - idItemCatalogo : UUID
+  - fechaAgregado : DateTime
+}
 
-    %% --- RELACIONES ---
-    Comentario "1" o-- "*" RespuestaComentario : contiene
-    Comentario "1" o-- "*" ReporteComentario : reportado_por
-
-    PublicacionComunidad "1" o-- "*" Comentario : recibe
-
-    Suscripcion --> Notificacion : genera
-
-    Reaccion --> Comentario : engagement
-    Reaccion --> PublicacionComunidad : engagement
-
-    HistorialVisualizacion --> VerMasTarde : referencia
-
-    Comentario --> Notificacion : genera
-    PublicacionComunidad --> Notificacion : genera
+Comentario "1" o-- "*" RespuestaComentario : contiene
+Comentario "1" o-- "*" ReporteComentario : reportado_por
+PublicacionComunidad "1" o-- "*" Comentario : recibe
+Suscripcion --> Notificacion : genera
+Reaccion --> Comentario : engagement
+Reaccion --> PublicacionComunidad : engagement
+HistorialVisualizacion --> VerMasTarde : referencia
+Comentario --> Notificacion : genera
+PublicacionComunidad --> Notificacion : genera
