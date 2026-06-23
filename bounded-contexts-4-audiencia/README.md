@@ -183,7 +183,7 @@ sequenceDiagram
     Note over User,C4: RF-A2 Reacción
 
     User->>C4: Publicación /reaccion
-    C4->>C4: Actualiza métricas engagement
+    C4->>C4: Actualiza métricas compromiso
     C4-->>User: 201 Creado
 
     %% --- EVENTO HACIA DESCUBRIMIENTO ---
