@@ -428,4 +428,4 @@ components:
           $ref: '#/components/schemas/IdItemCatalogo'
         timestamp:
           type: string
-          format: date-tim
+          format: date-time
