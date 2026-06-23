@@ -1,12 +1,14 @@
-openapi: 3.0.4
-
+openapi: 3.1.0
 info:
-  title: Discovery & Personalization API
+  title: API de Descubrimiento y Personalización (Discovery)
   version: 1.0.0
   description: |
-    Bounded Context 3 - Descubrimiento y Personalización.
+    ### Bounded Context 3 - Descubrimiento y Personalización.
     Responsable de búsqueda, feeds, recomendaciones, trending y señales.
     Solo trabaja con referencias a contenido (no streaming ni assets).
+    
+    * Consume eventos asíncronos de Catálogo para indexar contenido.
+    * Consume eventos de Publicación para ajustar el Watch Time.
 
 servers:
   - url: /api/v1/discovery
@@ -17,14 +19,16 @@ tags:
   - name: Recommendations
   - name: Trending
   - name: Signals
-  - name: Indexing
+  - name: Indexing (Webhooks)
 
 paths:
-
+  # =====================================================================
+  # BÚSQUEDA Y NAVEGACIÓN
+  # =====================================================================
   /search/videos:
     get:
       tags: [Search]
-      summary: Buscar videos
+      summary: Buscar videos indexados
       operationId: searchVideos
       parameters:
         - name: query
@@ -78,7 +82,7 @@ paths:
   /search/suggestions:
     get:
       tags: [Search]
-      summary: Sugerencias de búsqueda
+      summary: Sugerencias de búsqueda (Autocompletar)
       operationId: getSearchSuggestions
       parameters:
         - name: query
@@ -96,18 +100,20 @@ paths:
                 items:
                   type: string
 
-  /feeds/home/{userId}:
+  # =====================================================================
+  # FEEDS Y RECOMENDACIONES
+  # =====================================================================
+  /feeds/home/{idUsuario}:
     get:
       tags: [Feed]
-      summary: Feed personalizado
+      summary: Feed principal personalizado
       operationId: getHomeFeed
       parameters:
-        - name: userId
+        - name: idUsuario
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/IdUsuario'
         - name: page
           in: query
           schema:
@@ -129,51 +135,17 @@ paths:
                   nextPage:
                     type: integer
 
-  /feeds/explanation/{userId}/{contentId}:
-    get:
-      tags: [Feed]
-      summary: Explicación de recomendación
-      operationId: getRecommendationExplanation
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: contentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  reason:
-                    type: string
-                  signals:
-                    type: array
-                    items:
-                      type: string
-
-  /recommendations/related/{contentId}:
+  /recommendations/related/{idItemCatalogo}:
     get:
       tags: [Recommendations]
-      summary: Contenido relacionado
+      summary: Contenido relacionado al video actual
       operationId: getRelatedContent
       parameters:
-        - name: contentId
+        - name: idItemCatalogo
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/IdItemCatalogo'
       responses:
         "200":
           description: OK
@@ -184,6 +156,9 @@ paths:
                 items:
                   $ref: "#/components/schemas/Recommendation"
 
+  # =====================================================================
+  # TENDENCIAS (TRENDING)
+  # =====================================================================
   /trending:
     get:
       tags: [Trending]
@@ -220,31 +195,13 @@ paths:
                 items:
                   $ref: "#/components/schemas/TrendingItem"
 
-  /explore/categories/{category}:
-    get:
-      tags: [Trending]
-      summary: Explorar categoría
-      operationId: exploreCategory
-      parameters:
-        - name: category
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SearchResult"
-
+  # =====================================================================
+  # SEÑALES DIRECTAS (Frontend -> Backend)
+  # =====================================================================
   /signals/impressions:
     post:
       tags: [Signals]
-      summary: Registrar impresión
+      summary: Registrar impresión visual en pantalla
       operationId: registerImpression
       requestBody:
         required: true
@@ -259,7 +216,7 @@ paths:
   /signals/clicks:
     post:
       tags: [Signals]
-      summary: Registrar click
+      summary: Registrar CTR de miniatura
       operationId: registerClick
       requestBody:
         required: true
@@ -271,135 +228,125 @@ paths:
         "201":
           description: Created
 
-  /signals/watch-time:
+  # =====================================================================
+  # INTEGRACIÓN ASÍNCRONA (Webhooks Internos)
+  # =====================================================================
+  /webhooks/catalogo/contenido-publicado:
     post:
-      tags: [Signals]
-      summary: Registrar watch time
-      operationId: registerWatchTime
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WatchTimeSignal"
-      responses:
-        "201":
-          description: Created
-
-  /signals/aggregate:
-    post:
-      tags: [Signals]
-      summary: Agregar señales
-      operationId: aggregateSignals
+      tags: [Indexing (Webhooks)]
+      summary: Escucha cuando Catálogo publica un video para indexarlo en el buscador.
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [userId, contentId, type, value]
+              required: [idEvento, idItemCatalogo, titulo, categoria]
               properties:
-                userId:
+                idEvento:
                   type: string
                   format: uuid
-                contentId:
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                titulo:
                   type: string
-                  format: uuid
-                type:
+                categoria:
                   type: string
-                  enum: [impression, click, watch]
-                value:
-                  type: number
+                tags:
+                  type: array
+                  items:
+                    type: string
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Evento aceptado. El video ahora es buscable.
 
-  /profiles/interests/{userId}:
-    get:
-      tags: [Signals]
-      summary: Perfil de intereses
-      operationId: getInterestProfile
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserInterestProfile"
-
-  /index/content:
+  /webhooks/catalogo/contenido-despublicado:
     post:
-      tags: [Indexing]
-      summary: Indexar contenido
-      operationId: indexContent
+      tags: [Indexing (Webhooks)]
+      summary: Escucha cuando Catálogo retira un video para sacarlo del buscador.
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContentIndexRequest"
+              type: object
+              required: [idEvento, idItemCatalogo]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
       responses:
-        "201":
-          description: Created
+        "202":
+          description: Evento aceptado. Contenido desindexado.
 
-  /index/content/{contentId}:
-    put:
-      tags: [Indexing]
-      summary: Actualizar contenido indexado
-      operationId: updateIndexedContent
-      parameters:
-        - name: contentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+  /webhooks/publicacion/sesion-completada:
+    post:
+      tags: [Indexing (Webhooks)]
+      summary: Escucha a Publicación (C1) para computar el Watch Time real.
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContentIndexRequest"
+              type: object
+              required: [idEvento, idItemCatalogo, idUsuario, segundosVistos]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                idUsuario:
+                  $ref: '#/components/schemas/IdUsuario'
+                segundosVistos:
+                  type: integer
       responses:
-        "200":
-          description: Updated
-
-    delete:
-      tags: [Indexing]
-      summary: Eliminar contenido indexado
-      operationId: deleteIndexedContent
-      parameters:
-        - name: contentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: Deleted
-
-# =========================
-# SCHEMAS COMPLETOS
-# =========================
+        "202":
+          description: Evento aceptado. Algoritmo de recomendación actualizado.
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
+    IdItemCatalogo:
+      type: string
+      format: uuid
+      description: Identificador global del video público.
+      examples:
+        - "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+
+    IdCanal:
+      type: string
+      format: uuid
+      description: Identificador global del canal creador.
+      examples:
+        - "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+    IdUsuario:
+      type: string
+      format: uuid
+      description: Identificador global del espectador.
+      examples:
+        - "e4e0a812-c224-4b93-84b2-3c22119d8541"
 
     SearchResult:
       type: object
-      required: [id, title]
+      required: [idItemCatalogo, title]
       properties:
-        id:
-          type: string
-          format: uuid
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         title:
           type: string
         description:
@@ -412,11 +359,10 @@ components:
 
     ChannelResult:
       type: object
-      required: [id, name]
+      required: [idCanal, name]
       properties:
-        id:
-          type: string
-          format: uuid
+        idCanal:
+          $ref: '#/components/schemas/IdCanal'
         name:
           type: string
         subscribers:
@@ -428,11 +374,10 @@ components:
 
     Recommendation:
       type: object
-      required: [id, title, score]
+      required: [idItemCatalogo, title, score]
       properties:
-        id:
-          type: string
-          format: uuid
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         title:
           type: string
         score:
@@ -444,11 +389,10 @@ components:
 
     TrendingItem:
       type: object
-      required: [contentId, title, rank]
+      required: [idItemCatalogo, title, rank]
       properties:
-        contentId:
-          type: string
-          format: uuid
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         title:
           type: string
         rank:
@@ -462,14 +406,12 @@ components:
 
     ImpressionSignal:
       type: object
-      required: [userId, contentId, timestamp]
+      required: [idUsuario, idItemCatalogo, timestamp]
       properties:
-        userId:
-          type: string
-          format: uuid
-        contentId:
-          type: string
-          format: uuid
+        idUsuario:
+          $ref: '#/components/schemas/IdUsuario'
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         feedType:
           type: string
         timestamp:
@@ -478,62 +420,12 @@ components:
 
     ClickSignal:
       type: object
-      required: [userId, contentId, timestamp]
+      required: [idUsuario, idItemCatalogo, timestamp]
       properties:
-        userId:
-          type: string
-          format: uuid
-        contentId:
-          type: string
-          format: uuid
+        idUsuario:
+          $ref: '#/components/schemas/IdUsuario'
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         timestamp:
           type: string
-          format: date-time
-
-    WatchTimeSignal:
-      type: object
-      required: [userId, contentId, secondsWatched]
-      properties:
-        userId:
-          type: string
-          format: uuid
-        contentId:
-          type: string
-          format: uuid
-        secondsWatched:
-          type: integer
-          minimum: 0
-        completed:
-          type: boolean
-
-    UserInterestProfile:
-      type: object
-      required: [userId]
-      properties:
-        userId:
-          type: string
-          format: uuid
-        interests:
-          type: array
-          items:
-            type: string
-        topCategories:
-          type: array
-          items:
-            type: string
-
-    ContentIndexRequest:
-      type: object
-      required: [catalogItemId]
-      properties:
-        catalogItemId:
-          type: string
-          format: uuid
-        title:
-          type: string
-        category:
-          type: string
-        tags:
-          type: array
-          items:
-            type: string
+          format: date-tim
