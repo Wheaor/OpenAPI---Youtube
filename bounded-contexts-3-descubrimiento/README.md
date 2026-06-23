@@ -1,14 +1,14 @@
-# Bounded Contexts 4: Audiencia, Comunidad y Engagement
+# Bounded Contexts 3: Descubrimiento y Personalización
 
 ## 1. Descripción de Responsabilidad
 
-Gestionar la interacción social entre los usuarios, creadores y contenidos de la plataforma. Permite a los espectadores suscribirse a canales, reaccionar a videos mediante likes o dislikes, participar en conversaciones a través de comentarios y respuestas, gestionar listas de reproducción personales y mantener historiales de visualización.
+Gestionar el descubrimiento y la personalización de contenido para los espectadores de la plataforma. Permite indexar y organizar el contenido publicado por el Catálogo Editorial, ofrecer mecanismos de búsqueda de videos y canales, generar feeds personalizados y recomendaciones basadas en los intereses y comportamiento de cada usuario.
 
-Además, administra las publicaciones de comunidad realizadas por los creadores, las notificaciones generadas por actividades relevantes y las métricas de engagement derivadas de la interacción social de los usuarios. Este contexto constituye la principal fuente de señales sociales para los sistemas de recomendación y análisis de comportamiento de la plataforma.
+Además, incorpora señales de interacción provenientes de distintos contextos (impresiones, clics, tiempo de visualización y métricas de engagement) para construir perfiles dinámicos de intereses y alimentar los algoritmos de ranking. También calcula tendencias por región, categoría o temática, permitiendo la exploración de contenido popular y relevante.
 
-Asimismo, es responsable de mantener las relaciones entre audiencia y creadores, registrar eventos de participación y proveer mecanismos para moderar contenido generado por usuarios, incluyendo reportes, fijación de comentarios y configuración de preferencias de notificaciones.
+Este contexto incluye un motor de recomendación que evalúa la similitud temática entre contenidos, el historial de consumo de los usuarios y las señales de engagement agregadas para determinar el orden y relevancia de los resultados presentados. Asimismo, administra el índice de búsqueda utilizado para recuperar contenido de forma eficiente y consistente con las reglas de visibilidad definidas por Catálogo Editorial.
 
-Su responsabilidad se limita a la gestión de la comunidad y las interacciones sociales. No administra la reproducción de contenido multimedia, la indexación de videos, los algoritmos de recomendación, los derechos editoriales ni la monetización de creadores o anunciantes.
+Su responsabilidad se limita a determinar qué contenido debe ser descubierto por cada usuario y en qué orden presentarlo. No almacena comentarios, suscripciones o reacciones sociales, no reproduce contenido multimedia y no decide las políticas de visibilidad o monetización de los videos.
 
 ---
 
@@ -16,195 +16,204 @@ Su responsabilidad se limita a la gestión de la comunidad y las interacciones s
 
 El contrato formal de la API con sus endpoints, estructuras de datos (schemas), paginación y gestión de errores se encuentra en el siguiente archivo:
 
-* 📄 Ver Especificación OpenAPI (./openapi_audiencia.yaml)
+* 📄 Ver Especificación OpenAPI (./openapi_descubrimiento.yaml)
 
 ---
 
 ## 3. Diagrama de Clases Conceptual
 
-A continuación se presenta el modelo de datos canónico y las relaciones estrictas para el contexto de Audiencia, Comunidad y Engagement:
+A continuación se presenta el modelo de datos canónico y las relaciones estrictas para el contexto de Descubrimiento y Personalización:
 
 ```mermaid
 classDiagram
     direction TB
 
     %% --- ENUMERACIONES ---
-    class TipoReaccion {
+    class TipoFeed {
         <<enumeration>>
-        Like
-        Dislike
+        Home
+        Trending
+        Explore
+        Related
     }
 
-    class EstadoNotificacion {
+    class TipoOrdenBusqueda {
         <<enumeration>>
-        NoLeida
-        Leida
+        Relevancia
+        Popularidad
+        Fecha
     }
 
-    class EstadoReporte {
+    class TipoSenal {
+        <<enumeration>>
+        Impresion
+        Click
+        WatchTime
+    }
+
+    class EstadoIndexacion {
         <<enumeration>>
         Pendiente
-        Revisado
-        Resuelto
-        Rechazado
+        Indexado
+        Eliminado
     }
 
-    %% --- DOMINIO DE SUSCRIPCIONES ---
-    class Suscripcion {
-        - idSuscripcion : UUID
-        - idUsuario : UUID
-        - idCanal : UUID
-        - fechaSuscripcion : DateTime
-        + cancelar()
-    }
-
-    %% --- DOMINIO DE REACCIONES ---
-    class Reaccion {
-        - idReaccion : UUID
-        - idUsuario : UUID
+    %% --- DOMINIO DE INDEXACIÓN ---
+    class ContenidoIndexado {
         - idContenido : UUID
-        - tipo : TipoReaccion
-        - fechaRegistro : DateTime
-    }
-
-    %% --- DOMINIO DE COMENTARIOS ---
-    class Comentario {
-        - idComentario : UUID
-        - idContenido : UUID
-        - idAutor : UUID
-        - texto : String
-        - fechaCreacion : DateTime
-        - fijado : Boolean
-        + editar()
-        + eliminar()
-    }
-
-    class RespuestaComentario {
-        - idRespuesta : UUID
-        - idComentarioPadre : UUID
-        - idAutor : UUID
-        - texto : String
-        - fechaCreacion : DateTime
-    }
-
-    class ReporteComentario {
-        - idReporte : UUID
-        - motivo : String
-        - estado : EstadoReporte
-        - fechaReporte : DateTime
-    }
-
-    %% --- DOMINIO DE COMUNIDAD ---
-    class PublicacionComunidad {
-        - idPublicacion : UUID
-        - idCanal : UUID
-        - contenido : String
+        - titulo : String
+        - categoria : String
+        - tags : List~String~
         - fechaPublicacion : DateTime
+        - estadoIndexacion : EstadoIndexacion
+        + actualizarIndice()
+        + eliminarIndice()
     }
 
-    %% --- DOMINIO DE NOTIFICACIONES ---
-    class Notificacion {
-        - idNotificacion : UUID
+    %% --- DOMINIO DE BÚSQUEDA ---
+    class ConsultaBusqueda {
+        - idBusqueda : UUID
+        - textoConsulta : String
+        - fechaBusqueda : DateTime
+        - orden : TipoOrdenBusqueda
+    }
+
+    class ResultadoBusqueda {
+        - idContenido : UUID
+        - scoreRelevancia : Decimal
+        - posicion : Integer
+    }
+
+    %% --- DOMINIO DE RECOMENDACIÓN ---
+    class FeedPersonalizado {
+        - idFeed : UUID
         - idUsuario : UUID
-        - mensaje : String
-        - estado : EstadoNotificacion
-        - fechaCreacion : DateTime
-        + marcarLeida()
+        - tipoFeed : TipoFeed
+        - fechaGeneracion : DateTime
     }
 
-    %% --- DOMINIO DE HISTORIAL ---
-    class HistorialVisualizacion {
-        - idHistorial : UUID
+    class Recomendacion {
+        - idRecomendacion : UUID
+        - idContenido : UUID
+        - scoreRanking : Decimal
+        - motivo : String
+    }
+
+    class PerfilIntereses {
+        - idUsuario : UUID
+        - ultimaActualizacion : DateTime
+    }
+
+    class Interes {
+        - nombre : String
+        - peso : Decimal
+    }
+
+    %% --- DOMINIO DE TENDENCIAS ---
+    class Tendencia {
+        - idTendencia : UUID
+        - region : String
+        - categoria : String
+        - ranking : Integer
+        - vistasAcumuladas : Long
+    }
+
+    %% --- DOMINIO DE SEÑALES ---
+    class SenalComportamiento {
+        - idSenal : UUID
         - idUsuario : UUID
         - idContenido : UUID
-        - fechaVisualizacion : DateTime
-    }
-
-    class WatchLater {
-        - idRegistro : UUID
-        - idUsuario : UUID
-        - idContenido : UUID
-        - fechaAgregado : DateTime
+        - tipo : TipoSenal
+        - timestamp : DateTime
     }
 
     %% --- RELACIONES ---
-    Comentario "1" o-- "*" RespuestaComentario : contiene
+    ConsultaBusqueda "1" --> "*" ResultadoBusqueda : genera
 
-    Comentario "1" o-- "*" ReporteComentario : reportado_por
+    ResultadoBusqueda --> ContenidoIndexado : referencia
 
-    PublicacionComunidad "1" o-- "*" Comentario : recibe
+    FeedPersonalizado "1" o-- "*" Recomendacion : contiene
 
-    Suscripcion --> Notificacion : genera
+    Recomendacion --> ContenidoIndexado : recomienda
 
-    Reaccion --> Comentario : engagement
+    PerfilIntereses "1" o-- "*" Interes : compuesto_por
 
-    Reaccion --> PublicacionComunidad : engagement
+    Tendencia --> ContenidoIndexado : posiciona
 
-    HistorialVisualizacion --> WatchLater : referencia
+    SenalComportamiento --> ContenidoIndexado : asociada_a
 
-    Comentario --> Notificacion : genera
+    SenalComportamiento --> PerfilIntereses : actualiza
 
-    PublicacionComunidad --> Notificacion : genera
+    PerfilIntereses --> Recomendacion : influye
+
+    ContenidoIndexado --> Recomendacion : candidato
 ```
 
 ---
 
 ## 4. Diagrama de Secuencia
 
-A continuación se modela el comportamiento dinámico y asíncrono del sistema ante un escenario de participación de la audiencia. El diagrama muestra cómo una interacción social genera engagement y eventos consumidos posteriormente por otros contextos.
+A continuación se modela el comportamiento dinámico y asíncrono del sistema ante el escenario integrador definido por la cátedra. El diagrama muestra cómo Descubrimiento genera recomendaciones personalizadas consumiendo información proveniente de Catálogo, Audiencia y Publicación.
 
 ```mermaid
 sequenceDiagram
     autonumber
 
-    actor User as Espectador
-    participant C4 as C4: Audiencia
+    participant C2 as C2: Catálogo
     participant C3 as C3: Descubrimiento
-    participant Creator as Canal/Creador
+    participant C4 as C4: Audiencia
+    participant C1 as C1: Publicación
+    actor User as Espectador
 
-    %% --- SUSCRIPCIÓN ---
-    Note over User,C4: RF-A1 Suscripción a canal
+    %% --- INDEXACIÓN DE CONTENIDO ---
+    Note over C2,C3: RF-D6 Indexación de contenido
 
-    User->>C4: POST /subscriptions
-    C4->>C4: Registra suscripción
-    C4-->>User: 201 Created
+    C2-)C3: Evento ContenidoPublicado
+    C3->>C3: Actualiza índice de búsqueda
+    C3-->>C2: 202 Accepted
 
-    %% --- NOTIFICACIÓN ---
-    C4->>C4: Genera notificación de nuevas publicaciones
+    %% --- GENERACIÓN DEL FEED ---
+    Note over User,C3: RF-D2 Feed personalizado
 
-    %% --- COMENTARIO ---
-    Note over User,C4: RF-A3 Crear comentario
+    User->>C3: GET /feeds/home/{userId}
 
-    User->>C4: POST /comments
-    C4->>C4: Almacena comentario
-    C4-->>User: 201 Created
+    critical Motor de Personalización
+        C3->>C3: Consulta perfil de intereses
+        C3->>C3: Calcula ranking
+        C3->>C3: Genera recomendaciones
+    end
 
-    %% --- LIKE ---
-    Note over User,C4: RF-A2 Reacción
+    C3-->>User: 200 OK (FeedPersonalizado)
 
-    User->>C4: POST /reactions
-    C4->>C4: Actualiza métricas engagement
-    C4-->>User: 201 Created
+    %% --- IMPRESIÓN ---
+    Note over User,C3: RF-D5 Registro de impresión
 
-    %% --- EVENTO HACIA DESCUBRIMIENTO ---
-    Note over C4,C3: Integración asíncrona
+    User->>C3: POST /signals/impressions
+    C3->>C3: Actualiza métricas de exposición
+    C3-->>User: 201 Created
+
+    %% --- CLICK SOBRE RECOMENDACIÓN ---
+    Note over User,C3: RF-D5 Registro de click
+
+    User->>C3: POST /signals/clicks
+    C3->>C3: Incrementa score de interés
+    C3-->>User: 201 Created
+
+    %% --- WATCH TIME DESDE PUBLICACIÓN ---
+    Note over C1,C3: Integración asíncrona
+
+    C1-)C3: Evento SesionReproduccionCompletada
+    C3->>C3: Actualiza perfil de intereses
+    C3->>C3: Recalcula pesos de recomendación
+
+    %% --- ENGAGEMENT DESDE AUDIENCIA ---
+    Note over C4,C3: Integración de señales sociales
 
     C4-)C3: Evento EngagementRegistrado
     C3->>C3: Actualiza ranking del contenido
 
-    %% --- PUBLICACIÓN DE COMUNIDAD ---
-    Note over Creator,C4: RF-A6 Publicación comunidad
-
-    Creator->>C4: POST /community-posts
-    C4->>C4: Registra publicación
-
-    %% --- NOTIFICACIÓN A SUSCRIPTORES ---
-    C4->>C4: Genera notificaciones masivas
-
-    C4-->>Creator: 201 Created
-
-    %% --- CONSULTA DE NOTIFICACIONES ---
-    User->>C4: GET /notifications
-    C4-->>User: Lista de notificaciones
+    %% --- RECOMENDACIÓN FUTURA ---
+    Note over C3: El contenido con mejor ranking aparecerá en futuros feeds
 ```
+
 
