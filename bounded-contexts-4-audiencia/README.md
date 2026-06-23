@@ -2,33 +2,32 @@
 
 ## 1. Descripción de Responsabilidad
 
-Gestionar la interacción social entre los usuarios, creadores y contenidos de la plataforma. Permite a los espectadores suscribirse a canales, reaccionar a videos mediante likes o dislikes, participar en conversaciones a través de comentarios y respuestas, gestionar listas de reproducción personales y mantener historiales de visualización.
+Gestionar la interacción social entre los usuarios, creadores y los ítems del catálogo de la plataforma. Permite a los espectadores suscribirse a canales, reaccionar a ítems de contenido mediante likes o dislikes, participar en conversaciones a través de comentarios y respuestas, y administrar la relación social con los creadores.
 
-Además, administra las publicaciones de comunidad realizadas por los creadores, las notificaciones generadas por actividades relevantes y las métricas de engagement derivadas de la interacción social de los usuarios. Este contexto constituye la principal fuente de señales sociales para los sistemas de recomendación y análisis de comportamiento de la plataforma.
+Además, administra las publicaciones de comunidad realizadas por los creadores, las notificaciones generadas por eventos relevantes y las señales de engagement derivadas de la interacción de los usuarios con el contenido.
 
-Asimismo, es responsable de mantener las relaciones entre audiencia y creadores, registrar eventos de participación y proveer mecanismos para moderar contenido generado por usuarios, incluyendo reportes, fijación de comentarios y configuración de preferencias de notificaciones.
+Este contexto constituye la principal fuente de eventos sociales del sistema, los cuales son consumidos por el contexto de Descubrimiento para personalización y ranking.
 
-Su responsabilidad se limita a la gestión de la comunidad y las interacciones sociales. No administra la reproducción de contenido multimedia, la indexación de videos, los algoritmos de recomendación, los derechos editoriales ni la monetización de creadores o anunciantes.
+Asimismo, es responsable de registrar y emitir eventos de interacción como suscripciones, comentarios, reacciones y engagement, los cuales son utilizados por otros contextos para análisis y recomendación.
+
+Su responsabilidad se limita a la gestión de la capa social y de interacción. No administra la reproducción de video, la indexación de contenido, los algoritmos de recomendación, los derechos editoriales ni la monetización.
 
 ---
 
 ## 2. Especificación OpenAPI
 
-El contrato formal de la API con sus endpoints, estructuras de datos (schemas), paginación y gestión de errores se encuentra en el siguiente archivo:
+El contrato formal de la API con sus endpoints, estructuras de datos y eventos de dominio se encuentra en:
 
-* 📄 Ver Especificación OpenAPI (./openapi_audiencia.yaml)
+📄 Ver Especificación OpenAPI (./openapi_audiencia.yaml)
 
 ---
 
-## 3. Diagrama de Clases Conceptual
-
-A continuación se presenta el modelo de datos canónico y las relaciones estrictas para el contexto de Audiencia, Comunidad y Engagement:
+## 3. Modelo de Dominio (Clases)
 
 ```mermaid
 classDiagram
     direction TB
 
-    %% --- ENUMERACIONES ---
     class TipoReaccion {
         <<enumeration>>
         Like
@@ -41,60 +40,37 @@ classDiagram
         Leida
     }
 
-    class EstadoReporte {
-        <<enumeration>>
-        Pendiente
-        Revisado
-        Resuelto
-        Rechazado
-    }
-
-    %% --- DOMINIO DE SUSCRIPCIONES ---
     class Suscripcion {
         - idSuscripcion : UUID
         - idUsuario : UUID
         - idCanal : UUID
         - fechaSuscripcion : DateTime
-        + cancelar()
     }
 
-    %% --- DOMINIO DE REACCIONES ---
     class Reaccion {
         - idReaccion : UUID
         - idUsuario : UUID
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - tipo : TipoReaccion
         - fechaRegistro : DateTime
     }
 
-    %% --- DOMINIO DE COMENTARIOS ---
     class Comentario {
         - idComentario : UUID
-        - idContenido : UUID
-        - idAutor : UUID
+        - idItemCatalogo : UUID
+        - idUsuario : UUID
         - texto : String
         - fechaCreacion : DateTime
         - fijado : Boolean
-        + editar()
-        + eliminar()
-    }
-
-    class RespuestaComentario {
-        - idRespuesta : UUID
-        - idComentarioPadre : UUID
-        - idAutor : UUID
-        - texto : String
-        - fechaCreacion : DateTime
     }
 
     class ReporteComentario {
         - idReporte : UUID
         - motivo : String
-        - estado : EstadoReporte
+        - estado : String
         - fechaReporte : DateTime
     }
 
-    %% --- DOMINIO DE COMUNIDAD ---
     class PublicacionComunidad {
         - idPublicacion : UUID
         - idCanal : UUID
@@ -102,109 +78,86 @@ classDiagram
         - fechaPublicacion : DateTime
     }
 
-    %% --- DOMINIO DE NOTIFICACIONES ---
     class Notificacion {
         - idNotificacion : UUID
         - idUsuario : UUID
         - mensaje : String
         - estado : EstadoNotificacion
         - fechaCreacion : DateTime
-        + marcarLeida()
     }
 
-    %% --- DOMINIO DE HISTORIAL ---
     class HistorialVisualizacion {
         - idHistorial : UUID
         - idUsuario : UUID
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - fechaVisualizacion : DateTime
     }
 
     class WatchLater {
         - idRegistro : UUID
         - idUsuario : UUID
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - fechaAgregado : DateTime
     }
 
-    %% --- RELACIONES ---
-    Comentario "1" o-- "*" RespuestaComentario : contiene
-
-    Comentario "1" o-- "*" ReporteComentario : reportado_por
-
-    PublicacionComunidad "1" o-- "*" Comentario : recibe
-
-    Suscripcion --> Notificacion : genera
-
-    Reaccion --> Comentario : compromiso
-
-    Reaccion --> PublicacionComunidad : compromiso
-
-    HistorialVisualizacion --> WatchLater : referencia
-
-    Comentario --> Notificacion : genera
-
-    PublicacionComunidad --> Notificacion : genera
+    Comentario "1" o-- "*" ReporteComentario
+    PublicacionComunidad "1" o-- "*" Comentario
+    Suscripcion --> Notificacion
+    Comentario --> Notificacion
+    PublicacionComunidad --> Notificacion
 ```
 
 ---
 
-## 4. Diagrama de Secuencia
-
-A continuación se modela el comportamiento dinámico y asíncrono del sistema ante un escenario de participación de la audiencia. El diagrama muestra cómo una interacción social genera engagement y eventos consumidos posteriormente por otros contextos.
+## 4. Diagrama de Secuencia (Flujo Integrador)
 
 ```mermaid
 sequenceDiagram
     autonumber
 
     actor User as Espectador
-    participant C4 as C4: Audiencia
-    participant C3 as C3: Descubrimiento
-    participant Creator as Canal/Creador
+    participant C4 as Audiencia, Comunidad y Engagement
+    participant C3 as Descubrimiento
+    participant C1 as Publicación
+    participant Creator as Creador
 
-    %% --- SUSCRIPCIÓN ---
-    Note over User,C4: RF-A1 Suscripción a canal
+    User->>C4: POST /subscriptions
+    C4->>C4: Registrar suscripción
+    C4-->>User: 201 Created
+    C4-->>C3: UsuarioSuscritoEvent
 
-    User->>C4: Publicación /suscripciones
-    C4->>C4: Registra suscripción
-    C4-->>User: 201 Creado
+    User->>C4: POST /reactions
+    C4->>C4: Registrar reacción
+    C4-->>User: 201 Created
+    C4-->>C3: ReaccionRegistradaEvent
 
-    %% --- NOTIFICACIÓN ---
-    C4->>C4: Genera notificación de nuevas publicaciones
+    User->>C4: Watch / engagement
+    C4->>C4: Registrar engagement
+    C4-->>C3: EngagementRegistradoEvent
 
-    %% --- COMENTARIO ---
-    Note over User,C4: RF-A3 Crear comentario
+    User->>C4: POST /comments
+    C4->>C4: Guardar comentario
+    C4-->>User: 201 Created
+    C4-->>C3: ComentarioPublicadoEvent
 
-    User->>C4: Publicación /comentario
-    C4->>C4: Almacena comentario
-    C4-->>User: 201 Creado
-
-    %% --- LIKE ---
-    Note over User,C4: RF-A2 Reacción
-
-    User->>C4: Publicación /reaccion
-    C4->>C4: Actualiza métricas compromiso
-    C4-->>User: 201 Creado
-
-    %% --- EVENTO HACIA DESCUBRIMIENTO ---
-    Note over C4,C3: Integración asíncrona
-
-    C4-)C3: Evento EngagementRegistrado
-    C3->>C3: Actualiza ranking del contenido
-
-    %% --- PUBLICACIÓN DE COMUNIDAD ---
-    Note over Creator,C4: RF-A6 Publicación comunidad
-
-    Creator->>C4: Publicación /Publicación comunidad
-    C4->>C4: Registra publicación
-
-    %% --- NOTIFICACIÓN A SUSCRIPTORES ---
-    C4->>C4: Genera notificaciones masivas
-
-    C4-->>Creator: 201 Creado
-
-    %% --- CONSULTA DE NOTIFICACIONES ---
-    User->>C4: Obtener /notificaciones
-    C4-->>User: Lista de notificaciones
+    Creator->>C4: POST /community-posts
+    C4->>C4: Crear publicación
+    C4-->>Creator: 201 Created
 ```
 
+---
+
+## 5. Eventos de Dominio
+
+- UsuarioSuscritoEvent  
+- UsuarioDesuscritoEvent  
+- ReaccionRegistradaEvent  
+- ComentarioPublicadoEvent  
+- ComentarioEliminadoEvent  
+- EngagementRegistradoEvent  
+
+---
+
+## 6. Restricciones del Contexto
+
+No gestiona reproducción de video, recomendación, monetización ni derechos editoriales.
