@@ -145,19 +145,3 @@ sequenceDiagram
     C4-->>Creator: 201 Created
 ```
 
----
-
-## 5. Eventos de Dominio
-
-- UsuarioSuscritoEvent  
-- UsuarioDesuscritoEvent  
-- ReaccionRegistradaEvent  
-- ComentarioPublicadoEvent  
-- ComentarioEliminadoEvent  
-- EngagementRegistradoEvent  
-
----
-
-## 6. Restricciones del Contexto
-
-No gestiona reproducción de video, recomendación, monetización ni derechos editoriales.
