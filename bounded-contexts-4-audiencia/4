@@ -1,12 +1,14 @@
-openapi: 3.0.4
-
+openapi: 3.1.0
 info:
-  title: Audiencia, Comunidad y Engagement API
+  title: API de Audiencia, Comunidad y Engagement
   version: 1.0.0
   description: |
-    Bounded Context 4 - Audiencia, Comunidad y Engagement.
-    Gestiona suscripciones, reacciones, comentarios, notificaciones,
+    ### Bounded Context 4 - Audiencia, Comunidad y Engagement.
+    Gestiona suscripciones, reacciones, comentarios, notificaciones, 
     historial de visualización y publicaciones de comunidad.
+    
+    * Consume eventos asíncronos de Publicación (C1) para armar el historial.
+    * Consume eventos asíncronos de Catálogo (C2) y Publicación (C1) para disparar notificaciones.
 
 servers:
   - url: /api/v1/audience
@@ -18,19 +20,19 @@ tags:
   - name: Notifications
   - name: History
   - name: Community
-  - name: Moderation
+  - name: Integración (Webhooks)
 
 paths:
-
-  # =========================
+  # =====================================================================
   # SUSCRIPCIONES
-  # =========================
-
+  # =====================================================================
   /subscriptions:
     post:
       tags: [Subscriptions]
       summary: Suscribirse a un canal
       operationId: subscribeChannel
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -41,17 +43,17 @@ paths:
         "201":
           description: Created
 
-  /subscriptions/{userId}:
+  /subscriptions/{idUsuario}:
     get:
       tags: [Subscriptions]
       summary: Listar canales suscritos por usuario
       operationId: getUserSubscriptions
       parameters:
-        - name: userId
+        - name: idUsuario
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdUsuario'
       responses:
         "200":
           description: OK
@@ -62,30 +64,32 @@ paths:
                 items:
                   $ref: "#/components/schemas/Suscripcion"
 
-  /subscriptions/{subscriptionId}:
+  /subscriptions/{idSuscripcion}:
     delete:
       tags: [Subscriptions]
       summary: Cancelar suscripción
       operationId: unsubscribeChannel
       parameters:
-        - name: subscriptionId
+        - name: idSuscripcion
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         "200":
           description: Deleted
 
-  # =========================
+  # =====================================================================
   # REACCIONES
-  # =========================
-
+  # =====================================================================
   /reactions:
     post:
       tags: [Reactions]
-      summary: Crear o actualizar reacción
+      summary: Crear o actualizar reacción (Like/Dislike)
       operationId: upsertReaction
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -96,37 +100,37 @@ paths:
         "201":
           description: Created/Updated
 
-  /reactions/{userId}/{contentId}:
+  /reactions/{idUsuario}/{idItemCatalogo}:
     delete:
       tags: [Reactions]
       summary: Eliminar reacción
       operationId: deleteReaction
       parameters:
-        - name: userId
+        - name: idUsuario
           in: path
           required: true
           schema:
-            type: string
-        - name: contentId
+            $ref: '#/components/schemas/IdUsuario'
+        - name: idItemCatalogo
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdItemCatalogo'
       responses:
         "200":
           description: Deleted
 
-  /reactions/{contentId}:
+  /reactions/{idItemCatalogo}/stats:
     get:
       tags: [Reactions]
-      summary: Obtener conteo de reacciones
+      summary: Obtener conteo de reacciones de un video
       operationId: getReactionStats
       parameters:
-        - name: contentId
+        - name: idItemCatalogo
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdItemCatalogo'
       responses:
         "200":
           description: OK
@@ -135,15 +139,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ReactionStats"
 
-  # =========================
+  # =====================================================================
   # COMENTARIOS
-  # =========================
-
+  # =====================================================================
   /comments:
     post:
       tags: [Comments]
       summary: Crear comentario
       operationId: createComment
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -159,11 +164,11 @@ paths:
       summary: Listar comentarios de un contenido
       operationId: listComments
       parameters:
-        - name: contentId
+        - name: idItemCatalogo
           in: query
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdItemCatalogo'
         - name: sort
           in: query
           schema:
@@ -179,17 +184,18 @@ paths:
                 items:
                   $ref: "#/components/schemas/Comentario"
 
-  /comments/{commentId}:
+  /comments/{idComentario}:
     put:
       tags: [Comments]
       summary: Editar comentario
       operationId: editComment
       parameters:
-        - name: commentId
+        - name: idComentario
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -197,7 +203,7 @@ paths:
             schema:
               type: object
               properties:
-                text:
+                texto:
                   type: string
       responses:
         "200":
@@ -208,51 +214,56 @@ paths:
       summary: Eliminar comentario
       operationId: deleteComment
       parameters:
-        - name: commentId
+        - name: idComentario
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         "200":
           description: Deleted
 
-  /comments/{commentId}/report:
+  /comments/{idComentario}/report:
     post:
       tags: [Moderation]
-      summary: Reportar comentario
+      summary: Reportar comentario por abuso
       operationId: reportComment
       parameters:
-        - name: commentId
+        - name: idComentario
           in: path
           required: true
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ReportRequest"
+              type: object
+              required: [motivo]
+              properties:
+                motivo:
+                  type: string
       responses:
         "201":
           description: Reported
 
-  # =========================
-  # NOTIFICACIONES
-  # =========================
-
-  /notifications/{userId}:
+  # =====================================================================
+  # NOTIFICACIONES E HISTORIAL (Lectura)
+  # =====================================================================
+  /notifications/{idUsuario}:
     get:
       tags: [Notifications]
-      summary: Listar notificaciones
+      summary: Listar notificaciones del usuario
       operationId: getNotifications
       parameters:
-        - name: userId
+        - name: idUsuario
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdUsuario'
       responses:
         "200":
           description: OK
@@ -263,36 +274,17 @@ paths:
                 items:
                   $ref: "#/components/schemas/Notificacion"
 
-  /notifications/{notificationId}/read:
-    post:
-      tags: [Notifications]
-      summary: Marcar notificación como leída
-      operationId: markNotificationRead
-      parameters:
-        - name: notificationId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Updated
-
-  # =========================
-  # HISTORIAL
-  # =========================
-
-  /history/{userId}:
+  /history/{idUsuario}:
     get:
       tags: [History]
-      summary: Historial de visualización
+      summary: Obtener el historial de visualización (armado por eventos)
       operationId: getWatchHistory
       parameters:
-        - name: userId
+        - name: idUsuario
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdUsuario'
       responses:
         "200":
           description: OK
@@ -303,30 +295,16 @@ paths:
                 items:
                   $ref: "#/components/schemas/HistorialVisualizacion"
 
-  /watchlater:
-    post:
-      tags: [History]
-      summary: Guardar para ver después
-      operationId: addWatchLater
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WatchLaterRequest"
-      responses:
-        "201":
-          description: Created
-
-  # =========================
+  # =====================================================================
   # COMUNIDAD
-  # =========================
-
+  # =====================================================================
   /community-posts:
     post:
       tags: [Community]
-      summary: Crear publicación de comunidad
+      summary: Crear publicación de comunidad (Post de texto/imagen)
       operationId: createCommunityPost
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -337,17 +315,17 @@ paths:
         "201":
           description: Created
 
-  /community-posts/{channelId}:
+  /community-posts/{idCanal}:
     get:
       tags: [Community]
-      summary: Listar posts de comunidad
+      summary: Listar posts de comunidad de un canal
       operationId: listCommunityPosts
       parameters:
-        - name: channelId
+        - name: idCanal
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/IdCanal'
       responses:
         "200":
           description: OK
@@ -358,12 +336,121 @@ paths:
                 items:
                   $ref: "#/components/schemas/PublicacionComunidad"
 
-# =========================
-# SCHEMAS
-# =========================
+  # =====================================================================
+  # INTEGRACIÓN ASÍNCRONA (Webhooks Internos)
+  # =====================================================================
+  /webhooks/publicacion/sesion-completada:
+    post:
+      tags: [Integración (Webhooks)]
+      summary: Escucha a Publicación (C1) para construir el historial de visualización.
+      description: |
+        Cuando el reproductor informa que el usuario terminó de ver un video, 
+        este contexto lo agrega a su historial personal (RF-P3).
+      security:
+        - BearerAuth: [] # Rol: Sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idItemCatalogo, idUsuario, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                idUsuario:
+                  $ref: '#/components/schemas/IdUsuario'
+                timestamp:
+                  type: string
+                  format: date-time
+      responses:
+        "202":
+          description: Historial de usuario actualizado.
+
+  /webhooks/catalogo/contenido-publicado:
+    post:
+      tags: [Integración (Webhooks)]
+      summary: Escucha a Catálogo (C2) para disparar notificaciones de "Nuevo Video".
+      description: |
+        Si el canal que publicó el video tiene suscriptores, el motor de notificaciones
+        les envía una alerta.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idItemCatalogo, idCanal, titulo]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                idCanal:
+                  $ref: '#/components/schemas/IdCanal'
+                titulo:
+                  type: string
+      responses:
+        "202":
+          description: Evento aceptado. Notificaciones encoladas.
+
+  /webhooks/publicacion/transmision-vivo:
+    post:
+      tags: [Integración (Webhooks)]
+      summary: Escucha a Publicación (C1) para notificar "Canal en Vivo".
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idCanal, estado]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                idCanal:
+                  $ref: '#/components/schemas/IdCanal'
+                estado:
+                  type: string
+                  examples: ["EnVivo"]
+      responses:
+        "202":
+          description: Notificaciones de Live encoladas.
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
+    IdItemCatalogo:
+      type: string
+      format: uuid
+      description: Identificador global del video.
+      examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+
+    IdCanal:
+      type: string
+      format: uuid
+      description: Identificador global del canal creador.
+      examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+
+    IdUsuario:
+      type: string
+      format: uuid
+      description: Identificador global del espectador/usuario interactuando.
+      examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
 
     Suscripcion:
       type: object
@@ -371,10 +458,11 @@ components:
       properties:
         idSuscripcion:
           type: string
+          format: uuid
         idUsuario:
-          type: string
+          $ref: '#/components/schemas/IdUsuario'
         idCanal:
-          type: string
+          $ref: '#/components/schemas/IdCanal'
         fechaSuscripcion:
           type: string
           format: date-time
@@ -384,18 +472,18 @@ components:
       required: [idUsuario, idCanal]
       properties:
         idUsuario:
-          type: string
+          $ref: '#/components/schemas/IdUsuario'
         idCanal:
-          type: string
+          $ref: '#/components/schemas/IdCanal'
 
     ReactionRequest:
       type: object
-      required: [userId, contentId, type]
+      required: [idUsuario, idItemCatalogo, type]
       properties:
-        userId:
-          type: string
-        contentId:
-          type: string
+        idUsuario:
+          $ref: '#/components/schemas/IdUsuario'
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         type:
           type: string
           enum: [Like, Dislike]
@@ -403,23 +491,26 @@ components:
     ReactionStats:
       type: object
       properties:
-        contentId:
-          type: string
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         likes:
           type: integer
+          minimum: 0
         dislikes:
           type: integer
+          minimum: 0
 
     Comentario:
       type: object
-      required: [idComentario, idContenido, idAutor, texto]
+      required: [idComentario, idItemCatalogo, idUsuario, texto]
       properties:
         idComentario:
           type: string
-        idContenido:
-          type: string
-        idAutor:
-          type: string
+          format: uuid
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
+        idUsuario:
+          $ref: '#/components/schemas/IdUsuario'
         texto:
           type: string
         fechaCreacion:
@@ -430,31 +521,26 @@ components:
 
     CommentRequest:
       type: object
-      required: [idContenido, idAutor, texto]
+      required: [idItemCatalogo, idUsuario, texto]
       properties:
-        idContenido:
-          type: string
-        idAutor:
-          type: string
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
+        idUsuario:
+          $ref: '#/components/schemas/IdUsuario'
         texto:
           type: string
         parentId:
           type: string
-
-    ReportRequest:
-      type: object
-      required: [reason]
-      properties:
-        reason:
-          type: string
+          format: uuid
 
     Notificacion:
       type: object
       properties:
         idNotificacion:
           type: string
+          format: uuid
         idUsuario:
-          type: string
+          $ref: '#/components/schemas/IdUsuario'
         mensaje:
           type: string
         estado:
@@ -469,30 +555,23 @@ components:
       properties:
         idHistorial:
           type: string
+          format: uuid
         idUsuario:
-          type: string
-        idContenido:
-          type: string
+          $ref: '#/components/schemas/IdUsuario'
+        idItemCatalogo:
+          $ref: '#/components/schemas/IdItemCatalogo'
         fechaVisualizacion:
           type: string
           format: date-time
-
-    WatchLaterRequest:
-      type: object
-      required: [idUsuario, idContenido]
-      properties:
-        idUsuario:
-          type: string
-        idContenido:
-          type: string
 
     PublicacionComunidad:
       type: object
       properties:
         idPublicacion:
           type: string
+          format: uuid
         idCanal:
-          type: string
+          $ref: '#/components/schemas/IdCanal'
         contenido:
           type: string
         fechaPublicacion:
@@ -504,6 +583,6 @@ components:
       required: [idCanal, contenido]
       properties:
         idCanal:
-          type: string
+          $ref: '#/components/schemas/IdCanal'
         contenido:
           type: string
