@@ -9,6 +9,7 @@ info:
     
     * Consume eventos asíncronos de Publicación (C1) para armar el historial.
     * Consume eventos asíncronos de Catálogo (C2) y Publicación (C1) para disparar notificaciones.
+    * EMITE eventos de engagement para retroalimentar las recomendaciones de Descubrimiento (C3).
 
 servers:
   - url: /api/v1/audience
@@ -345,7 +346,7 @@ paths:
       summary: Escucha a Publicación (C1) para construir el historial de visualización.
       description: |
         Cuando el reproductor informa que el usuario terminó de ver un video, 
-        este contexto lo agrega a su historial personal (RF-P3).
+        este contexto lo agrega a su historial personal.
       security:
         - BearerAuth: [] # Rol: Sistema
       requestBody:
@@ -586,3 +587,50 @@ components:
           $ref: '#/components/schemas/IdCanal'
         contenido:
           type: string
+
+webhooks:
+  # =====================================================================
+  # EVENTOS EMITIDOS (Salida hacia Descubrimiento y otros)
+  # =====================================================================
+  engagementGenerado:
+    post:
+      summary: Notificar interacción social (Like, Comentario, Suscripción)
+      description: |
+        Evento asíncrono emitido cuando un usuario interactúa con el contenido o canal.
+        Consumido principalmente por Descubrimiento (C3) para ajustar el ranking de 
+        recomendaciones y calcular el Trending global/regional.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, tipoEngagement, idUsuario, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["f4a5b6c7-d8e9-4012-3456-f0123456789a"]
+                idItemCatalogo:
+                  type: string
+                  format: uuid
+                  description: Presente si la interacción es con un video (Like, Comentario).
+                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                idCanal:
+                  type: string
+                  format: uuid
+                  description: Presente si la interacción es con el canal (Suscripción).
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                idUsuario:
+                  $ref: '#/components/schemas/IdUsuario'
+                tipoEngagement:
+                  type: string
+                  enum: [Like, Dislike, NuevoComentario, NuevaSuscripcion, SuscripcionCancelada]
+                  examples: ["Like"]
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-23T18:30:00Z"]
+      responses:
+        '202':
+          description: Evento recibido por el broker de mensajería y listo para ser consumido por C3.
