@@ -10,15 +10,128 @@ info:
     * Controlar el ciclo de vida, vigencia y presupuestos de las Campañas Publicitarias (RF-F2).
     * Almacenar, asociar y validar los Creativos Publicitarios según políticas (RF-F3).
     * Definir criterios de segmentación geográfica, etaria y contextual (Targeting) (RF-F4).
-    * Determinar la elegibilidad del inventario de contenidos y asegurar Brand Safety (RF-F5).
+    * Determinar la elegibilidad del inventario de contenidos y asegurar Brand Safety mediante eventos asíncronos (RF-F5).
     * Arbitrar la entrega de anuncios en tiempo real ante oportunidades de visualización (RF-F6).
     * Capturar la telemetría de interacciones (impresiones, clicks, skips) y calcular gastos (RF-F7).
     * Exponer paneles analíticos de rendimiento y emitir facturas legales (Invoices) (RF-F8).
   contact:
     name: Equipo de Arquitectura de Software - UOH 2026
+
 paths:
+  # =====================================================================
+  # INTEGRACIÓN ASÍNCRONA DE INVENTARIO (RNF-4 / RNF-5: Integración con Catálogo)
+  # =====================================================================
+  /webhooks/catalogo/contenido-publicado:
+    post:
+      tags:
+        - Integración Inventario
+      summary: Recibe la notificación de nuevo contenido monetizable.
+      description: |
+        Escucha el evento `contenidoPublicado` emitido por el Contexto 2 (Catálogo).
+        Agrega el video al pool de subastas publicitarias si no tiene restricciones limitantes.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim de rol 'Sistema'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idItemCatalogo, idCanal, timestamp]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  description: Garantiza idempotencia.
+                  examples: ["a9b8c7d6-e5f4-4321-0fed-cba987654321"]
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                idCanal:
+                  $ref: '#/components/schemas/IdCanal'
+                timestamp:
+                  type: string
+                  format: date-time
+                  examples: ["2026-06-16T09:00:00Z"]
+                restriccionesActivas:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '202':
+          description: Evento aceptado. Inventario actualizado en el motor de subastas.
+
+  /webhooks/catalogo/contenido-despublicado:
+    post:
+      tags:
+        - Integración Inventario
+      summary: Retira un contenido del inventario publicitario.
+      description: |
+        Escucha el evento `contenidoDespublicado` emitido por Catálogo.
+        Bloquea inmediatamente la inyección de comerciales en este video.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim de rol 'Sistema'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idItemCatalogo, nuevoEstado]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["b0c1d2e3-f4a5-4678-9012-bcdef3456789"]
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                nuevoEstado:
+                  type: string
+                  examples:
+                    - "Despublicado"
+      responses:
+        '202':
+          description: Evento aceptado. Inventario bloqueado.
+
+  /webhooks/catalogo/restriccion-aplicada:
+    post:
+      tags:
+        - Integración Inventario
+      summary: Actualiza el Brand Safety de un video.
+      description: |
+        Escucha el evento `restriccionAplicada` emitido por Catálogo (Ej. LimitacionMonetizacion).
+        Ajusta la elegibilidad del video en el motor de subastas para proteger a los anunciantes.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim de rol 'Sistema'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idItemCatalogo, tipoRestriccion]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  examples: ["c1d2e3f4-a5b6-4789-0123-cdef45678901"]
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                tipoRestriccion:
+                  type: string
+                  examples:
+                    - "LimitacionMonetizacion"
+                    - "RestriccionEtaria"
+      responses:
+        '202':
+          description: Evento aceptado. Reglas de targeting actualizadas.
+
+  # =====================================================================
+  # GESTIÓN COMERCIAL (B2B)
+  # =====================================================================
   /anunciantes:
     post:
+      tags:
+        - Gestión B2B
       summary: Registrar una nueva cuenta de anunciante
       description: Permite registrar una empresa publicitaria en el marketplace B2B (RF-F1). La cuenta se inicializa en estado 'AlDia'.
       operationId: registrarAnunciante
@@ -60,6 +173,8 @@ paths:
 
   /campanas:
     post:
+      tags:
+        - Gestión B2B
       summary: Crear una nueva campaña publicitaria
       description: Permite a un anunciante autenticado inyectar una campaña con objetivo, presupuesto total, vigencia y puja para subasta (RF-F2 / RF-F6).
       operationId: crearCampana
@@ -74,6 +189,7 @@ paths:
                 idAnunciante:
                   type: string
                   format: uuid
+                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 objetivo:
                   type: string
                   maxLength: 255
@@ -119,6 +235,8 @@ paths:
 
   /campanas/{idCampana}/estado:
     patch:
+      tags:
+        - Gestión B2B
       summary: Actualizar el estado operativo de una campaña
       description: Permite pausar, reanudar o finalizar manualmente una campaña (RF-F2). También es invocado por el Sistema si el presupuesto se agota.
       operationId: cambiarEstadoCampana
@@ -129,6 +247,7 @@ paths:
           schema:
             type: string
             format: uuid
+            examples: ["550e8400-e29b-41d4-a716-446655440000"]
       requestBody:
         required: true
         content:
@@ -161,8 +280,10 @@ paths:
 
   /campanas/{idCampana}/creativos:
     post:
+      tags:
+        - Gestión B2B
       summary: Asociar un nuevo creativo publicitario a la campaña
-      description: Permite subir el recurso multimedia (video, display) and anexarlo a una campaña para su posterior validación de políticas (RF-F3).
+      description: Permite subir el recurso multimedia (video, display) y anexarlo a una campaña para su posterior validación de políticas (RF-F3).
       operationId: asociarCreativo
       parameters:
         - name: idCampana
@@ -171,6 +292,7 @@ paths:
           schema:
             type: string
             format: uuid
+            examples: ["550e8400-e29b-41d4-a716-446655440000"]
       requestBody:
         required: true
         content:
@@ -197,7 +319,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreativoPublicitario'
         '400':
-          description: Formato inválido o duración inconsistente con el tipo de formato (ej. Bumper de más de 6 segundos).
+          description: Formato inválido o duración inconsistente con el tipo de formato.
           content:
             application/json:
               schema:
@@ -211,6 +333,8 @@ paths:
 
   /campanas/{idCampana}/targeting:
     put:
+      tags:
+        - Gestión B2B
       summary: Definir o actualizar los criterios de segmentación de la campaña
       description: Establece las reglas de targeting geográfico, etario y de categorías de contenido para la entrega del anuncio (RF-F4).
       operationId: configuringTargeting
@@ -221,6 +345,7 @@ paths:
           schema:
             type: string
             format: uuid
+            examples: ["550e8400-e29b-41d4-a716-446655440000"]
       requestBody:
         required: true
         content:
@@ -272,36 +397,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /inventario/{idItemCatalogo}:
-    put:
-      summary: Sincronizar la elegibilidad de un video del catálogo (RF-F5)
-      description: Endpoint invocado por el Contexto de Catálogo para notificar cambios en la monetización o Brand Safety de un contenido (RNF-4 / RF-F5).
-      operationId: sincronizarInventario
-      parameters:
-        - name: idItemCatalogo
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InventarioContenido'
-      responses:
-        '200':
-          description: Estado de inventario actualizado/registrado correctamente.
-        '400':
-          description: Datos de sincronización inválidos.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
+  # =====================================================================
+  # MOTOR TRANSACCIONAL (CORE)
+  # =====================================================================
   /subastas/decidir:
     post:
+      tags:
+        - Motor Transaccional
       summary: Decidir qué anuncio mostrar ante una oportunidad de visualización (RF-F6)
       description: El reproductor de YouTube envía el contexto del espectador y el video, y el motor de subasta arbitra y retorna el anuncio ganador considerando la puja y targeting (RF-F6).
       operationId: decidirAnuncio
@@ -329,8 +431,10 @@ paths:
 
   /telemetria/interacciones:
     post:
+      tags:
+        - Motor Transaccional
       summary: Registrar interacciones con los anuncios (RF-F7)
-      description: Captura las métricas en tiempo real emitidas por el reproductor (Impresiones, Clicks, Skips) y calcula el gasto inmediato de la campaña (RF-F7).
+      description: Captura las métricas en tiempo real emitidas por el reproductor (Impresiones, Clicks, Skips) y calcula el gasto inmediato de la campaña (RF-F7). Al procesar una 'Impresión', este endpoint gatilla internamente el evento hacia Monetización.
       operationId: registrarInteraccion
       requestBody:
         required: true
@@ -343,6 +447,7 @@ paths:
                 idCreativo:
                   type: string
                   format: uuid
+                  examples: ["1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"]
                 tipoInteraccion:
                   $ref: '#/components/schemas/TipoInteraccion'
       responses:
@@ -359,8 +464,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # =====================================================================
+  # ANALÍTICA Y REPORTES
+  # =====================================================================
   /campanas/{idCampana}/reporte:
     get:
+      tags:
+        - Analítica
       summary: Obtener el reporte de rendimiento consolidado de una campaña (RF-F8)
       description: Expone las métricas acumuladas de la campaña, incluyendo impresiones, clicks, skips, CTR, CPM y gasto acumulado (RF-F8).
       operationId: obtenerReporteCampana
@@ -371,6 +481,7 @@ paths:
           schema:
             type: string
             format: uuid
+            examples: ["550e8400-e29b-41d4-a716-446655440000"]
       responses:
         '200':
           description: Reporte de rendimiento obtenido correctamente.
@@ -387,6 +498,8 @@ paths:
 
   /anunciantes/{idAnunciante}/facturas:
     get:
+      tags:
+        - Analítica
       summary: Listar las facturas emitidas para un anunciante (RF-F8 / RNF-3)
       description: Retorna un listado histórico de cobros (invoices) del anunciante. Incluye paginación obligatoria por parámetros de URL (RNF-3).
       operationId: listarFacturasAnunciante
@@ -397,6 +510,7 @@ paths:
           schema:
             type: string
             format: uuid
+            examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         - name: page
           in: query
           required: false
@@ -463,6 +577,21 @@ components:
         El token debe incluir los claims de identidad y rol (e.g., rol: Anunciante, rol: Sistema).
 
   schemas:
+    # --- IDENTIFICADORES COMPARTIDOS (RNF-2) ---
+    IdItemCatalogo:
+      type: string
+      format: uuid
+      description: Identificador del video. Publicidad lo usa como puntero para aplicar el targeting.
+      examples:
+        - "d3b07384-d113-4956-a5db-2d1b331a0f2c"
+
+    IdCanal:
+      type: string
+      format: uuid
+      description: Identificador de la cuenta del creador.
+      examples:
+        - "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
     # --- ENUMERADOS ---
     EstadoFinanciero:
       type: string
@@ -744,29 +873,6 @@ components:
           format: date-time
           examples: ["2026-06-15T22:05:00Z"]
 
-    InventarioContenido:
-      type: object
-      required: [idCanal, esMonetizable, categoriaContenido, estadoSeguridadMarca]
-      properties:
-        idItemCatalogo:
-          type: string
-          format: uuid
-          readOnly: true
-          description: ID del video mapeado desde el contexto de Catálogo (RNF-2).
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
-        idCanal:
-          type: string
-          format: uuid
-          examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
-        esMonetizable:
-          type: boolean
-          examples: [true]
-        categoriaContenido:
-          type: string
-          examples: ["Videojuegos"]
-        estadoSeguridadMarca:
-          $ref: '#/components/schemas/EstadoSeguridadMarca'
-
     OportunidadVisualizacion:
       type: object
       required: [idOportunidad, idItemCatalogo, paisEspectador, edadEspectador, formatoSolicitado]
@@ -777,9 +883,7 @@ components:
           readOnly: true
           examples: ["6c2b8d9e-0f1a-2b3c-4d5e-6f7a8b9c0d1e"]
         idItemCatalogo:
-          type: string
-          format: uuid
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+          $ref: '#/components/schemas/IdItemCatalogo'
         paisEspectador:
           type: string
           minLength: 2
@@ -793,6 +897,9 @@ components:
           $ref: '#/components/schemas/TipoFormato'
 
 webhooks:
+  # =====================================================================
+  # EVENTOS EMITIDOS (Salida hacia Monetización)
+  # =====================================================================
   ingresoPublicitarioGenerado:
     post:
       summary: Notificar ingreso publicitario facturable (RNF-4 / RF-F7)
@@ -813,15 +920,9 @@ webhooks:
                   format: uuid
                   examples: ["a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d"]
                 idItemCatalogo:
-                  type: string
-                  format: uuid
-                  description: ID del video donde se reprodujo el anuncio. Utilizado por Monetización para el desglose analítico.
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  $ref: '#/components/schemas/IdItemCatalogo'
                 idCanal:
-                  type: string
-                  format: uuid
-                  description: Cuenta de negocio del creador dueño del video a quien se le debe pagar.
-                  examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+                  $ref: '#/components/schemas/IdCanal'
                 idCampana:
                   type: string
                   format: uuid
