@@ -165,7 +165,7 @@ sequenceDiagram
     %% --- SUSCRIPCIÓN ---
     Note over User,C4: RF-A1 Suscripción a canal
 
-    User->>C4: POST /suscripciones
+    User->>C4: Publicación /suscripciones
     C4->>C4: Registra suscripción
     C4-->>User: 201 Creado
 
@@ -175,14 +175,14 @@ sequenceDiagram
     %% --- COMENTARIO ---
     Note over User,C4: RF-A3 Crear comentario
 
-    User->>C4: POST /comentario
+    User->>C4: Publicación /comentario
     C4->>C4: Almacena comentario
     C4-->>User: 201 Creado
 
     %% --- LIKE ---
     Note over User,C4: RF-A2 Reacción
 
-    User->>C4: POST /reacciones
+    User->>C4: Publicación /reaccion
     C4->>C4: Actualiza métricas engagement
     C4-->>User: 201 Creado
 
@@ -195,7 +195,7 @@ sequenceDiagram
     %% --- PUBLICACIÓN DE COMUNIDAD ---
     Note over Creator,C4: RF-A6 Publicación comunidad
 
-    Creator->>C4: POST /Publicación comunidad
+    Creator->>C4: Publicación /Publicación comunidad
     C4->>C4: Registra publicación
 
     %% --- NOTIFICACIÓN A SUSCRIPTORES ---
@@ -204,7 +204,7 @@ sequenceDiagram
     C4-->>Creator: 201 Creado
 
     %% --- CONSULTA DE NOTIFICACIONES ---
-    User->>C4: GET /notificaciones
+    User->>C4: Obtener /notificaciones
     C4-->>User: Lista de notificaciones
 ```
 
