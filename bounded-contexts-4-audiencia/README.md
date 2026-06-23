@@ -167,7 +167,7 @@ sequenceDiagram
 
     User->>C4: POST /suscripciones
     C4->>C4: Registra suscripción
-    C4-->>User: 201 Created
+    C4-->>User: 201 Creado
 
     %% --- NOTIFICACIÓN ---
     C4->>C4: Genera notificación de nuevas publicaciones
@@ -177,14 +177,14 @@ sequenceDiagram
 
     User->>C4: POST /comentario
     C4->>C4: Almacena comentario
-    C4-->>User: 201 Created
+    C4-->>User: 201 Creado
 
     %% --- LIKE ---
     Note over User,C4: RF-A2 Reacción
 
     User->>C4: POST /reacciones
     C4->>C4: Actualiza métricas engagement
-    C4-->>User: 201 Created
+    C4-->>User: 201 Creado
 
     %% --- EVENTO HACIA DESCUBRIMIENTO ---
     Note over C4,C3: Integración asíncrona
@@ -201,7 +201,7 @@ sequenceDiagram
     %% --- NOTIFICACIÓN A SUSCRIPTORES ---
     C4->>C4: Genera notificaciones masivas
 
-    C4-->>Creator: 201 Created
+    C4-->>Creator: 201 Creado
 
     %% --- CONSULTA DE NOTIFICACIONES ---
     User->>C4: GET /notificaciones
