@@ -13,3 +13,188 @@ El contrato formal de la API de este contexto junto con sus endpoints, estructur
 
 ## 3. Diagrama de Clases Conceptual 
 A continuación se presenta el modelo de datos canónico y las relaciones estrictas para el contexto de Catálogo Editorial y Derechos:
+
+```mermaid
+classDiagram
+
+    direction TB
+
+
+    class EstadoVisibilidad {
+        <<enumeration>>
+        Borrador
+        Publicado
+        Despublicado
+        Restringido
+    }
+
+    class TipoRestriccion {
+        <<enumeration>>
+        RestriccionEtaria
+        BloqueGeografico
+        LimitacionMonetizacion
+        SuspensionModeracion
+    }
+
+    class TipoReclamacion {
+        <<enumeration>>
+        DerechosAutor
+        MarcaRegistrada
+        Privacidad
+        Otro
+    }
+
+    class EstadoReclamacion {
+        <<enumeration>>
+        Pendiente
+        Aceptada
+        Disputada
+        Retirada
+    }
+
+    class VisibilidadPlaylist {
+        <<enumeration>>
+        Publica
+        Privada
+        NoListada
+    }
+
+    class CategoriaContenido {
+        <<enumeration>>
+        Musica
+        Videojuegos
+        Deportes
+        Educacion
+        Entretenimiento
+        Noticias
+        Ciencia
+        Moda
+        Comedia
+        Mascotas
+        Automovilismo
+        Otro
+    }
+
+
+    class Canal {
+        -idCanal: UUID
+        -idCreador: UUID
+        -nombre: string
+        -descripcion: string
+        -urlImagenPerfil: URI
+        -fechaCreacion: DateTime 
+        +actualizarPerfil(nombre, descripcion, urlImagenPerfil) Canal
+        +listarContenidosPublicados(pagina, limite, categoria) PaginaContenidos
+    }
+
+    class ItemCatalogo {
+        -idItemCatalogo: UUID
+        -idAsset: UUID
+        -idCanal: UUID
+        -titulo: string
+        -descripcion: string
+        -List~String~ tags
+        -categoria: CategoriaContenido
+        -urlMiniatura: URI
+        -estadoVisibilidad: EstadoVisibilidad
+        -fechaCreacion: DateTime 
+        -fechaPublicacion: DateTime
+        +editarMetadata(titulo, descripcion, tags, categoria, urlMiniatura) ItemCatalogo
+        +publicar() void
+        +despublicar(motivo) void
+        +tieneRestriccionBloqueante() Boolean
+        +evaluarVisibilidad(pais, edad) ResultadoVisibilidad
+        +aplicarRestriccion(tipo, motivo, params) Restriccion
+        +levantarRestriccion(idRestriccion) void
+    }
+
+    class Playlist {
+        -idPlaylist: UUID
+        -idCanal: UUID
+        -titulo: string
+        -descripcion: string
+        -visibilidad: VisibilidadPlaylist
+        -totalItems: int
+        -fechaCreacion: DateTime
+        +agregarItem(idItemCatalogo) PlaylistDetalle
+        +quitarItem(idItemCatalogo) PlaylistDetalle
+        +reordenar(ordenIds) PlaylistDetalle
+    }
+
+    class ItemPlaylist {
+        -posicion: int
+        -idItemCatalogo: UUID
+        -titulo: string
+        -urlMiniatura: URI
+    }
+
+    class Restriccion {
+        -idRestriccion: UUID
+        -idItemCatalogo: UUID
+        -tipoRestriccion: TipoRestriccion
+        -motivo: string
+        -edadMinima: int
+        -List~String~ territoriosBloqueados
+        -monetizacionLimitada: Boolean
+        -activa: Boolean
+        -fechaAplicacion: DateTime
+        -fechaLevantamiento: DateTime
+        +esBloqueante() Boolean
+        +levantar() void
+        +afectaA(pais, edad) Boolean
+    }
+
+    class Reclamacion {
+        -idReclamacion: UUID
+        -idItemCatalogo: UUID
+        -idReclamante: UUID
+        -tipoReclamacion: TipoReclamacion
+        -descripcion: string
+        -List~String~ territoriosAfectados
+        -urlEvidencia: URI
+        -estado: EstadoReclamacion
+        -resolucion: string
+        -motivoResolucion: string
+        -fechaCreacion: DateTime
+        -fechaResolucion: DateTime
+        +resolver(resolucion, motivoResolucion) void
+        +emitirEventoCreacion() void
+        +emitirEventoResolucion() void
+    }
+
+
+
+    class ResultadoVisibilidad {
+        <<value object>>
+        -idItemCatalogo: UUID
+        -visible: Boolean
+        -estadoVisibilidad: EstadoVisibilidad
+        -motivoNoVisibilidad: string
+    }
+
+    class EstadoPoliticaContenido {
+        <<read model>>
+        -idItemCatalogo: UUID
+        -List~Restriccion~ restriccionesActivas
+        -List~Restriccion~ historial
+    }
+
+
+    
+
+
+    Canal "1" *-- "0..*" ItemCatalogo : contiene
+    Canal "1" *-- "0..*" Playlist : contiene
+
+    ItemCatalogo "1" *-- "0..*" Restriccion : tiene
+    ItemCatalogo "1" *-- "0..*" Reclamacion : tiene
+    ItemCatalogo "1" ..> "1" ResultadoVisibilidad : produce
+    ItemCatalogo "1" ..> "1" EstadoPoliticaContenido : agrega
+
+    Playlist "1" *-- "1..*" ItemPlaylist : ordena
+    ItemPlaylist "0..*" --> "1" ItemCatalogo : referencia
+
+    Reclamacion "0..*" ..> "0..*" Restriccion : puede generar
+
+
+```
