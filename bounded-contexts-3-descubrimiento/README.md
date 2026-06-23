@@ -215,5 +215,41 @@ sequenceDiagram
     C3->>C3: Actualiza ranking del contenido
 
     %% --- RECOMENDACIÓN FUTURA ---
+
+
+
+
+
+sequenceDiagram
+    autonumber
+
+    actor Usuario as Espectador
+    participant C4 as C4: Audiencia
+    participant C3 as C3: Descubrimiento
+    participant Canal as Canal/Creador
+
+    Usuario->>C4: POST /suscripciones
+    C4->>C4: Registra suscripción
+    C4-->>Usuario: 201 Creado
+
+    C4->>C4: Genera notificaciones
+
+    Usuario->>C4: POST /comentarios
+    C4->>C4: Guarda comentario
+    C4-->>Usuario: 201 Creado
+
+    Usuario->>C4: POST /reacciones
+    C4->>C4: Actualiza engagement
+    C4-->>Usuario: 201 Creado
+
+    C4-)C3: Evento EngagementRegistrado
+    C3->>C3: Actualiza ranking
+
+    Canal->>C4: POST /publicaciones-comunidad
+    C4->>C4: Registra publicación
+    C4-->>Canal: 201 Creado
+
+    Usuario->>C4: GET /notificaciones
+    C4-->>Usuario: Lista de notificaciones
     Note over C3: El contenido con mejor ranking aparecerá en futuros feeds
 ```
