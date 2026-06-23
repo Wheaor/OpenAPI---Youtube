@@ -184,8 +184,8 @@ sequenceDiagram
 
     %% --- INTEGRACIÓN ENTRANTE (Catálogo -> Publicidad) ---
     Note over C2, C6: RNF-5: Sincronización asíncrona de elegibilidad (RF-F5)
-    C2->>C6: PUT /inventario/{idItemCatalogo} (esMonetizable, BrandSafety)
-    C6-->>C2: 200 OK
+    C2-)C6: Webhook: contenidoPublicado / restriccionAplicada
+    C6-->>C2: 202 Accepted
 
     %% --- TRANSACCIÓN CORE (Frontend <-> Publicidad) ---
     Note over App, C6: RF-F6: El usuario visualiza un video (Oportunidad)
