@@ -172,7 +172,7 @@ sequenceDiagram
 
     C2-)C3: Evento ContenidoPublicado
     C3->>C3: Actualiza índice de búsqueda
-    C3-->>C2: 202 Accepted
+    C3-->>C2: 202 Aceptado
 
     %% --- GENERACIÓN DEL FEED ---
     Note over User,C3: RF-D2 Feed personalizado
@@ -190,16 +190,16 @@ sequenceDiagram
     %% --- IMPRESIÓN ---
     Note over User,C3: RF-D5 Registro de impresión
 
-    User->>C3: POST /signals/impressions
+    User->>C3: POST /señales/impresiones
     C3->>C3: Actualiza métricas de exposición
     C3-->>User: 201 Created
 
     %% --- CLICK SOBRE RECOMENDACIÓN ---
     Note over User,C3: RF-D5 Registro de click
 
-    User->>C3: POST /signals/clicks
+    User->>C3: POST /señales/click
     C3->>C3: Incrementa score de interés
-    C3-->>User: 201 Created
+    C3-->>User: 201 Creado
 
     %% --- WATCH TIME DESDE PUBLICACIÓN ---
     Note over C1,C3: Integración asíncrona
