@@ -1,0 +1,539 @@
+openapi: 3.0.4
+
+info:
+  title: Discovery & Personalization API
+  version: 1.0.0
+  description: |
+    Bounded Context 3 - Descubrimiento y Personalización.
+    Responsable de búsqueda, feeds, recomendaciones, trending y señales.
+    Solo trabaja con referencias a contenido (no streaming ni assets).
+
+servers:
+  - url: /api/v1/discovery
+
+tags:
+  - name: Search
+  - name: Feed
+  - name: Recommendations
+  - name: Trending
+  - name: Signals
+  - name: Indexing
+
+paths:
+
+  /search/videos:
+    get:
+      tags: [Search]
+      summary: Buscar videos
+      operationId: searchVideos
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: duration
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+
+  /search/channels:
+    get:
+      tags: [Search]
+      summary: Buscar canales
+      operationId: searchChannels
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChannelResult"
+
+  /search/suggestions:
+    get:
+      tags: [Search]
+      summary: Sugerencias de búsqueda
+      operationId: getSearchSuggestions
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /feeds/home/{userId}:
+    get:
+      tags: [Feed]
+      summary: Feed personalizado
+      operationId: getHomeFeed
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recommendations]
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Recommendation"
+                  nextPage:
+                    type: integer
+
+  /feeds/explanation/{userId}/{contentId}:
+    get:
+      tags: [Feed]
+      summary: Explicación de recomendación
+      operationId: getRecommendationExplanation
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reason:
+                    type: string
+                  signals:
+                    type: array
+                    items:
+                      type: string
+
+  /recommendations/related/{contentId}:
+    get:
+      tags: [Recommendations]
+      summary: Contenido relacionado
+      operationId: getRelatedContent
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+
+  /trending:
+    get:
+      tags: [Trending]
+      summary: Trending global
+      operationId: getTrending
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendingItem"
+
+  /trending/{region}:
+    get:
+      tags: [Trending]
+      summary: Trending regional
+      operationId: getRegionalTrending
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendingItem"
+
+  /explore/categories/{category}:
+    get:
+      tags: [Trending]
+      summary: Explorar categoría
+      operationId: exploreCategory
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+
+  /signals/impressions:
+    post:
+      tags: [Signals]
+      summary: Registrar impresión
+      operationId: registerImpression
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImpressionSignal"
+      responses:
+        "201":
+          description: Created
+
+  /signals/clicks:
+    post:
+      tags: [Signals]
+      summary: Registrar click
+      operationId: registerClick
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClickSignal"
+      responses:
+        "201":
+          description: Created
+
+  /signals/watch-time:
+    post:
+      tags: [Signals]
+      summary: Registrar watch time
+      operationId: registerWatchTime
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchTimeSignal"
+      responses:
+        "201":
+          description: Created
+
+  /signals/aggregate:
+    post:
+      tags: [Signals]
+      summary: Agregar señales
+      operationId: aggregateSignals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, contentId, type, value]
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                contentId:
+                  type: string
+                  format: uuid
+                type:
+                  type: string
+                  enum: [impression, click, watch]
+                value:
+                  type: number
+      responses:
+        "200":
+          description: OK
+
+  /profiles/interests/{userId}:
+    get:
+      tags: [Signals]
+      summary: Perfil de intereses
+      operationId: getInterestProfile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInterestProfile"
+
+  /index/content:
+    post:
+      tags: [Indexing]
+      summary: Indexar contenido
+      operationId: indexContent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentIndexRequest"
+      responses:
+        "201":
+          description: Created
+
+  /index/content/{contentId}:
+    put:
+      tags: [Indexing]
+      summary: Actualizar contenido indexado
+      operationId: updateIndexedContent
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentIndexRequest"
+      responses:
+        "200":
+          description: Updated
+
+    delete:
+      tags: [Indexing]
+      summary: Eliminar contenido indexado
+      operationId: deleteIndexedContent
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deleted
+
+# =========================
+# SCHEMAS COMPLETOS
+# =========================
+
+components:
+  schemas:
+
+    SearchResult:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+          format: uri
+        channelName:
+          type: string
+
+    ChannelResult:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        subscribers:
+          type: integer
+          minimum: 0
+        thumbnail:
+          type: string
+          format: uri
+
+    Recommendation:
+      type: object
+      required: [id, title, score]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        reason:
+          type: string
+
+    TrendingItem:
+      type: object
+      required: [contentId, title, rank]
+      properties:
+        contentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        rank:
+          type: integer
+          minimum: 1
+        region:
+          type: string
+        views:
+          type: integer
+          minimum: 0
+
+    ImpressionSignal:
+      type: object
+      required: [userId, contentId, timestamp]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        contentId:
+          type: string
+          format: uuid
+        feedType:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ClickSignal:
+      type: object
+      required: [userId, contentId, timestamp]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        contentId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+
+    WatchTimeSignal:
+      type: object
+      required: [userId, contentId, secondsWatched]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        contentId:
+          type: string
+          format: uuid
+        secondsWatched:
+          type: integer
+          minimum: 0
+        completed:
+          type: boolean
+
+    UserInterestProfile:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        interests:
+          type: array
+          items:
+            type: string
+        topCategories:
+          type: array
+          items:
+            type: string
+
+    ContentIndexRequest:
+      type: object
+      required: [catalogItemId]
+      properties:
+        catalogItemId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
