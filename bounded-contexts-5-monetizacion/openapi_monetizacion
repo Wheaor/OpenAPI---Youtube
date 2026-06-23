@@ -1,0 +1,268 @@
+openapi: 3.1.0
+info:
+  title: API Monetización del Ecosistema Creador (Contexto 5)
+  version: 1.0.0
+  description: |
+    Responsable de la gestión financiera y contable de los creadores.
+    Gestiona la elegibilidad (RF-M1), productos directos (RF-M2), 
+    reparto de ingresos publicitarios (RF-M3), analítica (RF-M4) y 
+    payouts a pasarelas bancarias externas (RF-M5).
+servers:
+  - url: https://api.plataforma.com/v1/monetizacion
+    description: Servidor de Producción
+  - url: https://sandbox.plataforma.com/v1/monetizacion
+    description: Entorno de Pruebas (Pagos Simulados)
+
+tags:
+  - name: Elegibilidad
+    description: Control de acceso al programa de socios (RF-M1)
+  - name: Productos Creador
+    description: Transacciones directas del espectador (RF-M2)
+  - name: Ingresos Internos
+    description: Webhooks de integración con otros contextos (RF-M3)
+  - name: Analítica Financiera
+    description: Tableros de rendimiento (RF-M4)
+  - name: Payouts y Compliance
+    description: Retiros bancarios y perfil fiscal (RF-M5)
+
+paths:
+  # =====================================================================
+  # INGESTA ASÍNCRONA (RF-M3: Integración con Publicidad)
+  # =====================================================================
+  /webhooks/ingresos-publicidad:
+    post:
+      tags:
+        - Ingresos Internos
+      summary: Recibe el evento de ingresos generados por anuncios (RF-M3).
+      description: |
+        Endpoint interno de ingesta llamado por el Contexto 6 (Publicidad) 
+        cada vez que un anuncio factura una impresión válida. Este endpoint 
+        aplica la regla de Revenue Share y suma el capital al saldo disponible del creador.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim de rol 'Sistema'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idEvento, idCanal, idItemCatalogo, montoTotalPlataforma, moneda]
+              properties:
+                idEvento:
+                  type: string
+                  format: uuid
+                  description: ID para garantizar idempotencia y evitar doble contabilización.
+                idCanal:
+                  $ref: '#/components/schemas/IdCanal'
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                montoTotalPlataforma:
+                  type: number
+                  format: double
+                  description: Dinero bruto cobrado al anunciante.
+                moneda:
+                  type: string
+                  examples:
+                    - "CLP"
+      responses:
+        '202':
+          description: Evento recibido, Revenue Share calculado y saldo actualizado.
+        '400':
+          description: Payload inválido o evento duplicado (Fallo de idempotencia).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEstandar'
+
+  # =====================================================================
+  # TRANSACCIONES DIRECTAS (RF-M2: Productos del Creador)
+  # =====================================================================
+  /propinas:
+    post:
+      tags:
+        - Productos Creador
+      summary: Procesa el pago de una propina por video (RF-M2).
+      description: |
+        Transacción síncrona iniciada por un espectador. 
+        Contacta a la pasarela externa de pagos antes de crear el RegistroIngreso.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim de rol 'Espectador'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idUsuario, idItemCatalogo, montoPago, moneda]
+              properties:
+                idUsuario:
+                  $ref: '#/components/schemas/IdUsuario'
+                idItemCatalogo:
+                  $ref: '#/components/schemas/IdItemCatalogo'
+                montoPago:
+                  type: number
+                  format: double
+                  description: Monto que el espectador desea aportar.
+                moneda:
+                  type: string
+                  examples:
+                    - "CLP"
+                mensajeAdjunto:
+                  type: string
+                  maxLength: 500
+                  description: Mensaje de agradecimiento visible para el creador.
+      responses:
+        '201':
+          description: Pago procesado exitosamente por la pasarela bancaria. Recibo emitido.
+        '402':
+          description: Pago requerido. La tarjeta fue rechazada por falta de fondos o fraude.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEstandar'
+
+  # =====================================================================
+  # ANALÍTICA FINANCIERA (RF-M4: Tableros de rendimiento)
+  # =====================================================================
+  /canales/{idCanal}/resumen-financiero:
+    get:
+      tags:
+        - Analítica Financiera
+      summary: Consulta las ganancias consolidadas por periodo (RF-M4).
+      description: |
+        Endpoint de alta velocidad optimizado para lectura (OLAP). 
+        Retorna los ingresos precalculados sin bloquear la base de datos transaccional.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim 'Creador'
+      parameters:
+        - name: idCanal
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/IdCanal'
+        - name: periodo
+          in: query
+          required: true
+          description: Identificador del periodo a consultar (ej. 'mes_actual', '2026-05').
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Resumen financiero devuelto exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalIngresosCreador:
+                    type: number
+                    format: double
+                  totalIngresosPlataforma:
+                    type: number
+                    format: double
+                  fechaActualizacion:
+                    type: string
+                    format: date-time
+
+  # =====================================================================
+  # PAYOUTS Y COMPLIANCE (RF-M5: Retiro de fondos)
+  # =====================================================================
+  /canales/{idCanal}/retiros:
+    post:
+      tags:
+        - Payouts y Compliance
+      summary: Solicita un retiro de fondos hacia una pasarela bancaria externa (RF-M5).
+      description: |
+        Procesa la solicitud de retiro (Payout). 
+        Aplica bloqueos estrictos si el perfil fiscal no está verificado o si el saldo es insuficiente.
+      security:
+        - BearerAuth: [] # Requiere JWT con claim 'Creador'
+      parameters:
+        - name: idCanal
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/IdCanal'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [montoSolicitado, moneda]
+              properties:
+                montoSolicitado:
+                  type: number
+                  format: double
+                moneda:
+                  type: string
+                  examples:
+                    - "CLP"
+      responses:
+        '202':
+          description: Solicitud aceptada. Retiro en proceso de transferencia SWIFT.
+        '400':
+          description: Fraude o Error de concurrencia. El saldo disponible es menor al solicitado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEstandar'
+        '403':
+          description: Bloqueo de Compliance. El Perfil Fiscal no está verificado (Documento de identidad o RUT pendiente).
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT emitido por la plataforma. 
+        Debe contener los claims de rol: `Creador`, `Espectador` o `Sistema` (para webhooks internos).
+
+  schemas:
+    # --- IDENTIFICADORES GLOBALES (RNF-2) ---
+    IdCanal:
+      type: string
+      format: uuid
+      description: ID de la cuenta de negocio del creador. Dueño original del concepto en Catálogo.
+      examples:
+        - "123e4567-e89b-12d3-a456-426614174000"
+
+    IdItemCatalogo:
+      type: string
+      format: uuid
+      description: Puntero al video publicado. Necesario para desglosar métricas (RPM) y propinas.
+      examples:
+        - "987e6543-e21b-34d2-b876-556677889900"
+
+    IdUsuario:
+      type: string
+      format: uuid
+      description: Puntero al espectador que realiza el pago transaccional.
+      examples:
+        - "550e8400-e29b-41d4-a716-446655440000"
+
+    # --- RESPUESTAS DE ERROR (RNF-3) ---
+    ErrorEstandar:
+      type: object
+      required: [codigo, mensaje, timestamp]
+      properties:
+        codigo:
+          type: string
+          examples:
+            - "SALDO_INSUFICIENTE"
+        mensaje:
+          type: string
+          examples:
+            - "El creador no posee saldo disponible para procesar el retiro."
+        timestamp:
+          type: string
+          format: date-time
+        detalles:
+          type: array
+          items:
+            type: string
+
+security:
+  - BearerAuth: []
