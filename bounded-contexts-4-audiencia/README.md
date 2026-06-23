@@ -18,7 +18,7 @@ Su responsabilidad se limita a la gestión de la capa social y de interacción. 
 
 El contrato formal de la API con sus endpoints, estructuras de datos y eventos de dominio se encuentra en:
 
-📄 Ver Especificación OpenAPI (./4.yml)
+📄 Ver Especificación OpenAPI (./openapi_audiencia.yml)
 
 ---
 
