@@ -8,6 +8,8 @@ Además, incorpora señales de interacción provenientes de distintos contextos 
 
 Este contexto incluye un motor de recomendación que evalúa la similitud temática entre contenidos, el historial de consumo de los usuarios y las señales de engagement agregadas para determinar el orden y relevancia de los resultados presentados. Asimismo, administra el índice de búsqueda utilizado para recuperar contenido de forma eficiente y consistente con las reglas de visibilidad definidas por Catálogo Editorial.
 
+Asimismo, mantiene mecanismos de integración asíncrona con los contextos de Catálogo Editorial y Publicación para indexar contenido publicado, desindexar contenido retirado y actualizar los algoritmos de recomendación mediante señales reales de consumo.
+
 Su responsabilidad se limita a determinar qué contenido debe ser descubierto por cada usuario y en qué orden presentarlo. No almacena comentarios, suscripciones o reacciones sociales, no reproduce contenido multimedia y no decide las políticas de visibilidad o monetización de los videos.
 
 ---
@@ -16,7 +18,7 @@ Su responsabilidad se limita a determinar qué contenido debe ser descubierto po
 
 El contrato formal de la API con sus endpoints, estructuras de datos (schemas), paginación y gestión de errores se encuentra en el siguiente archivo:
 
-* 📄 Ver Especificación OpenAPI 
+* 📄 Ver Especificación OpenAPI
 
 ---
 
@@ -60,7 +62,7 @@ classDiagram
 
     %% --- DOMINIO DE INDEXACIÓN ---
     class ContenidoIndexado {
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - titulo : String
         - categoria : String
         - tags : List~String~
@@ -79,7 +81,7 @@ classDiagram
     }
 
     class ResultadoBusqueda {
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - scoreRelevancia : Decimal
         - posicion : Integer
     }
@@ -94,7 +96,7 @@ classDiagram
 
     class Recomendacion {
         - idRecomendacion : UUID
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - scoreRanking : Decimal
         - motivo : String
     }
@@ -122,7 +124,7 @@ classDiagram
     class SenalComportamiento {
         - idSenal : UUID
         - idUsuario : UUID
-        - idContenido : UUID
+        - idItemCatalogo : UUID
         - tipo : TipoSenal
         - timestamp : DateTime
     }
@@ -175,7 +177,7 @@ sequenceDiagram
     %% --- GENERACIÓN DEL FEED ---
     Note over User,C3: RF-D2 Feed personalizado
 
-    User->>C3: GET /feeds/home/{userId}
+    User->>C3: GET /feeds/home/{idUsuario}
 
     critical Motor de Personalización
         C3->>C3: Consulta perfil de intereses
@@ -215,5 +217,3 @@ sequenceDiagram
     %% --- RECOMENDACIÓN FUTURA ---
     Note over C3: El contenido con mejor ranking aparecerá en futuros feeds
 ```
-
-
