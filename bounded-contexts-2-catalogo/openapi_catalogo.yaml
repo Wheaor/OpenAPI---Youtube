@@ -417,7 +417,7 @@ paths:
             maxLength: 2
             pattern: '^[A-Z]{2}$'
           description: Código de país ISO 3166-1 alpha-2 del espectador.
-          examples: ["CL"]
+          example: ["CL"]
         - name: edad
           in: query
           required: false
@@ -426,7 +426,7 @@ paths:
             minimum: 0
             maximum: 120
           description: Edad del espectador en años. Si no se provee, se asume usuario no autenticado (máxima restricción etaria).
-          examples: [25]
+          example: [25]
       responses:
         '200':
           description: Evaluación de visibilidad completada.
