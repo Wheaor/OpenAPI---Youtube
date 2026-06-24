@@ -29,20 +29,20 @@ paths:
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 nombreArchivo:
                   type: string
-                  examples: ["vlog-viaje-patagonia-ep3.mp4"]
+                  example: ["vlog-viaje-patagonia-ep3.mp4"]
                 tamanoBytesTotal:
                   type: integer
                   format: int64
                   minimum: 1
-                  examples: [524288000]
+                  example: [524288000]
                 tipoSubida:
                   type: string
                   enum: [Completa, PorPartes]
                   description: Indica si el archivo se enviará en un solo request o fragmentado en múltiples partes.
-                  examples: ["PorPartes"]
+                  example: ["PorPartes"]
       responses:
         '201':
           description: Subida iniciada exitosamente. Retorna la URL o las URLs de destino para el envío de los bytes.
@@ -284,7 +284,7 @@ paths:
             minLength: 2
             maxLength: 2
           description: Código de país del espectador, utilizado para enrutar a la CDN más cercana.
-          examples: ["CL"]
+          example: ["CL"]
       responses:
         '200':
           description: Manifest de reproducción generado exitosamente.
@@ -321,18 +321,18 @@ paths:
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idUsuario:
                   type: string
                   format: uuid
-                  examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+                  example: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
                 calidadInicial:
                   type: string
-                  examples: ["720p"]
+                  example: ["720p"]
                 dispositivo:
                   type: string
                   enum: [Movil, Tablet, Desktop, SmartTV, Consola]
-                  examples: ["Movil"]
+                  example: ["Movil"]
       responses:
         '201':
           description: Sesión de reproducción iniciada exitosamente.
@@ -369,19 +369,19 @@ paths:
                 segundoActual:
                   type: integer
                   minimum: 0
-                  examples: [305]
+                  example: [305]
                 calidadEnUso:
                   type: string
-                  examples: ["1080p"]
+                  example: ["1080p"]
                 interrupciones:
                   type: integer
                   minimum: 0
                   description: Contador de cortes o rebuffering detectados durante la reproducción.
-                  examples: [2]
+                  example: [2]
                 finalizada:
                   type: boolean
                   description: Indica si la sesión debe marcarse como completada con esta actualización.
-                  examples: [false]
+                  example: [false]
       responses:
         '200':
           description: Sesión actualizada correctamente.
@@ -418,11 +418,11 @@ paths:
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 titulo:
                   type: string
                   maxLength: 255
-                  examples: ["Sesión de preguntas y respuestas - Vivo"]
+                  example: ["Sesión de preguntas y respuestas - Vivo"]
       responses:
         '201':
           description: Transmisión configurada. Retorna los datos de conexión (ingestUrl, claveStream) para el software de emisión.
@@ -463,7 +463,7 @@ paths:
                   type: boolean
                   description: Cuando 'estado' es 'Finalizada', indica si debe generarse un Asset on-demand a partir de la grabación del live.
                   default: true
-                  examples: [true]
+                  example: [true]
       responses:
         '200':
           description: Estado de la transmisión actualizado correctamente.
@@ -534,13 +534,13 @@ paths:
                       $ref: '#/components/schemas/Asset'
                   totalRecords:
                     type: integer
-                    examples: [37]
+                    example: [37]
                   page:
                     type: integer
-                    examples: [1]
+                    example: [1]
                   limit:
                     type: integer
-                    examples: [10]
+                    example: [10]
         '400':
           description: Parámetros de paginación inválidos.
           content:
@@ -619,28 +619,28 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
+          example: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
         idCanal:
           type: string
           format: uuid
-          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         nombreArchivo:
           type: string
-          examples: ["vlog-viaje-patagonia-ep3.mp4"]
+          example: ["vlog-viaje-patagonia-ep3.mp4"]
         tamanoBytesTotal:
           type: integer
           format: int64
-          examples: [524288000]
+          example: [524288000]
         tipoSubida:
           type: string
           enum: [Completa, PorPartes]
-          examples: ["PorPartes"]
+          example: ["PorPartes"]
         bytesRecibidos:
           type: integer
           format: int64
           readOnly: true
           description: Cantidad de bytes recibidos hasta el momento, utilizada para calcular el progreso (RF-P1).
-          examples: [262144000]
+          example: [262144000]
         estado:
           allOf:
             - $ref: '#/components/schemas/EstadoSubida'
@@ -650,7 +650,7 @@ components:
           format: uuid
           readOnly: true
           description: Referencia al Asset generado una vez que la subida se completa.
-          examples: [null]
+          example: [null]
 
     Asset:
       type: object
@@ -661,19 +661,19 @@ components:
           format: uuid
           readOnly: true
           description: Identificador técnico del contenido (videoAssetId), referenciado por el Contexto de Catálogo (RNF-2).
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+          example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
         idCanal:
           type: string
           format: uuid
-          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         idSubidaOrigen:
           type: string
           format: uuid
-          examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
+          example: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
         duracionSegundos:
           type: integer
           minimum: 0
-          examples: [842]
+          example: [842]
         estado:
           allOf:
             - $ref: '#/components/schemas/EstadoProcesamiento'
@@ -695,11 +695,11 @@ components:
             tamanoBytesOriginal:
               type: integer
               format: int64
-              examples: [524288000]
+              example: [524288000]
             fechaCreacion:
               type: string
               format: date-time
-              examples: ["2026-06-10T14:32:00Z"]
+              example: ["2026-06-10T14:32:00Z"]
 
     Procesamiento:
       type: object
@@ -709,7 +709,7 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+          example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
         estado:
           $ref: '#/components/schemas/EstadoProcesamiento'
         calidadesGeneradas:
@@ -720,12 +720,12 @@ components:
           examples: [["360p", "720p", "1080p"]]
         motivoFallo:
           type: [string, "null"]
-          examples: [null]
+          example: [null]
         intentos:
           type: integer
           minimum: 1
           readOnly: true
-          examples: [1]
+          example: [1]
 
     ManifestReproduccion:
       type: object
@@ -735,23 +735,23 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+          example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
         calidadesDisponibles:
           type: array
           items:
             type: string
-          examples: [["360p", "720p", "1080p"]]
+          example: [["360p", "720p", "1080p"]]
         calidadRecomendada:
           type: string
           description: Calidad sugerida según el ancho de banda y dispositivo informados (RF-P3).
-          examples: ["720p"]
+          example: ["720p"]
         urlsReproduccion:
           type: object
           description: Mapa de calidad a URL de streaming, ya resuelto contra la CDN regional correspondiente.
           additionalProperties:
             type: string
             format: uri
-          examples: [{"360p": "https://cdn-cl.yt.example/d3b0.../360p.m3u8", "720p": "https://cdn-cl.yt.example/d3b0.../720p.m3u8"}]
+          example: [{"360p": "https://cdn-cl.yt.example/d3b0.../360p.m3u8", "720p": "https://cdn-cl.yt.example/d3b0.../720p.m3u8"}]
 
     SesionReproduccion:
       type: object
@@ -761,35 +761,35 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
+          example: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
         idAsset:
           type: string
           format: uuid
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+          example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
         idUsuario:
           type: string
           format: uuid
-          examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+          example: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
         dispositivo:
           type: string
           enum: [Movil, Tablet, Desktop, SmartTV, Consola]
-          examples: ["Movil"]
+          example: ["Movil"]
         segundoActual:
           type: integer
           minimum: 0
-          examples: [305]
+          example: [305]
         calidadEnUso:
           type: string
-          examples: ["1080p"]
+          example: ["1080p"]
         interrupciones:
           type: integer
           minimum: 0
-          examples: [2]
+          example: [2]
         estado:
           type: string
           enum: [Activa, Finalizada]
           default: Activa
-          examples: ["Activa"]
+          example: ["Activa"]
 
     TransmisionVivo:
       type: object
@@ -799,15 +799,15 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
+          example: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
         idCanal:
           type: string
           format: uuid
-          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         titulo:
           type: string
           maxLength: 255
-          examples: ["Sesión de preguntas y respuestas - Vivo"]
+          example: ["Sesión de preguntas y respuestas - Vivo"]
         estado:
           allOf:
             - $ref: '#/components/schemas/EstadoTransmisionVivo'
@@ -817,18 +817,18 @@ components:
           format: uri
           readOnly: true
           description: Endpoint de ingesta al que el software externo (OBS, etc.) debe conectarse para emitir.
-          examples: ["rtmp://ingest.yt.example/live"]
+          example: ["rtmp://ingest.yt.example/live"]
         claveStream:
           type: string
           readOnly: true
           description: Clave secreta de transmisión asociada a esta configuración de live.
-          examples: ["live_8f14e45f-ceea-stream-key"]
+          example: ["live_8f14e45f-ceea-stream-key"]
         idAssetGrabacion:
           type: [string, "null"]
           format: uuid
           readOnly: true
           description: Referencia al Asset on-demand generado al finalizar el live, si se solicitó grabación.
-          examples: [null]
+          example: [null]
 
     ErrorResponse:
       type: object
@@ -837,15 +837,15 @@ components:
         codigo:
           type: string
           description: Código de error interno de la aplicación para mapeo semántico.
-          examples: ["SUBIDA_INCOMPLETA"]
+          example: ["SUBIDA_INCOMPLETA"]
         mensaje:
           type: string
           description: Descripción amigable del error para el desarrollador o cliente.
-          examples: ["No se han recibido todas las partes declaradas para esta subida."]
+          example: ["No se han recibido todas las partes declaradas para esta subida."]
         timestamp:
           type: string
           format: date-time
-          examples: ["2026-06-15T21:57:08Z"]
+          example: ["2026-06-15T21:57:08Z"]
         detalles:
           type: array
           items:
@@ -871,24 +871,24 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d"]
+                  example: ["a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d"]
                 idSubida:
                   type: string
                   format: uuid
-                  examples: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
+                  example: ["8f14e45f-ceea-467e-aded-a51c10fb2a45"]
                 idAsset:
                   type: string
                   format: uuid
                   description: Asset generado a partir de la subida completada.
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T21:50:00Z"]
+                  example: ["2026-06-15T21:50:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado por el sistema receptor para su procesamiento asíncrono.
@@ -913,15 +913,15 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
+                  example: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 resultado:
                   type: string
                   enum: [Exito, Fallo]
-                  examples: ["Exito"]
+                  example: ["Exito"]
                 calidadesGeneradas:
                   type: array
                   items:
@@ -929,11 +929,11 @@ webhooks:
                   examples: [["360p", "720p", "1080p"]]
                 motivoFallo:
                   type: [string, "null"]
-                  examples: [null]
+                  example: [null]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T22:05:00Z"]
+                  example: ["2026-06-15T22:05:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado por el sistema receptor para su procesamiento asíncrono.
@@ -959,20 +959,20 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"]
+                  example: ["c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"]
                 idAsset:
                   type: string
                   format: uuid
                   description: Identificador técnico (videoAssetId) que Catálogo utilizará para vincular su propio ítem editorial (RNF-2).
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 duracionSegundos:
                   type: integer
                   minimum: 0
-                  examples: [842]
+                  example: [842]
                 calidadesGeneradas:
                   type: array
                   items:
@@ -981,7 +981,7 @@ webhooks:
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T22:06:00Z"]
+                  example: ["2026-06-15T22:06:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado por el Contexto de Catálogo para su procesamiento asíncrono.
@@ -1007,38 +1007,38 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"]
+                  example: ["d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"]
                 idSesion:
                   type: string
                   format: uuid
-                  examples: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
+                  example: ["b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"]
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idUsuario:
                   type: string
                   format: uuid
-                  examples: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
+                  example: ["e4e0a812-c224-4b93-84b2-3c22119d8541"]
                 segundosVistos:
                   type: integer
                   minimum: 0
-                  examples: [780]
+                  example: [780]
                 duracionSegundos:
                   type: integer
                   minimum: 0
-                  examples: [842]
+                  example: [842]
                 calidadPredominante:
                   type: string
-                  examples: ["1080p"]
+                  example: ["1080p"]
                 interrupciones:
                   type: integer
                   minimum: 0
-                  examples: [2]
+                  example: [2]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T22:20:00Z"]
+                  example: ["2026-06-15T22:20:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado por los sistemas receptores para su procesamiento asíncrono.
@@ -1064,26 +1064,26 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b"]
+                  example: ["e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b"]
                 idTransmision:
                   type: string
                   format: uuid
-                  examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
+                  example: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 estado:
                   $ref: '#/components/schemas/EstadoTransmisionVivo'
                 idAssetGrabacion:
                   type: [string, "null"]
                   format: uuid
                   description: Presente únicamente cuando 'estado' es 'Finalizada' y se generó una grabación.
-                  examples: [null]
+                  example: [null]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T20:00:00Z"]
+                  example: ["2026-06-15T20:00:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado por los sistemas receptores para su procesamiento asíncrono.
