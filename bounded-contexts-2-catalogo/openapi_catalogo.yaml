@@ -1885,7 +1885,7 @@ webhooks:
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-18T09:00:00Z"]
+                  example: ["2026-06-18T09:00:00Z"]
       responses:
         '202':
           description: Evento recibido por los sistemas suscriptores.
