@@ -38,19 +38,19 @@ paths:
                   type: string
                   format: uuid
                   description: Identificador del creador en el sistema de identidad compartido.
-                  examples: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                  example: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
                 nombre:
                   type: string
                   maxLength: 100
-                  examples: ["Canal de Viajes Luisito"]
+                  example: ["Canal de Viajes Luisito"]
                 descripcion:
                   type: string
                   maxLength: 1000
-                  examples: ["Vlogs de viaje por Sudamérica y el mundo."]
+                  example: ["Vlogs de viaje por Sudamérica y el mundo."]
                 urlImagenPerfil:
                   type: string
                   format: uri
-                  examples: ["https://storage.yt.example/avatares/luisito.jpg"]
+                  example: ["https://storage.yt.example/avatares/luisito.jpg"]
       responses:
         '201':
           description: Canal creado exitosamente.
@@ -110,15 +110,15 @@ paths:
                 nombre:
                   type: string
                   maxLength: 100
-                  examples: ["Canal de Viajes Luisito — Temporada 2"]
+                  example: ["Canal de Viajes Luisito — Temporada 2"]
                 descripcion:
                   type: string
                   maxLength: 1000
-                  examples: ["Vlogs de viaje, cultura y gastronomía."]
+                  example: ["Vlogs de viaje, cultura y gastronomía."]
                 urlImagenPerfil:
                   type: string
                   format: uri
-                  examples: ["https://storage.yt.example/avatares/luisito-v2.jpg"]
+                  example: ["https://storage.yt.example/avatares/luisito-v2.jpg"]
       responses:
         '200':
           description: Canal actualizado exitosamente.
@@ -206,33 +206,33 @@ paths:
                     Identificador del asset técnico en el Contexto de Publicación (RNF-2).
                     Este ID es la referencia de integración entre contextos; Catálogo no
                     duplica los datos técnicos del asset.
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
                   description: Canal editorial al que pertenece este contenido (RNF-2).
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 titulo:
                   type: string
                   maxLength: 255
-                  examples: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
+                  example: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
                 descripcion:
                   type: string
                   maxLength: 5000
-                  examples: ["Tercer episodio de la serie: tres días en el parque nacional."]
+                  example: ["Tercer episodio de la serie: tres días en el parque nacional."]
                 tags:
                   type: array
                   items:
                     type: string
                     maxLength: 50
                   maxItems: 30
-                  examples: [["viaje", "patagonia", "chile", "naturaleza"]]
+                  example: [["viaje", "patagonia", "chile", "naturaleza"]]
                 categoria:
                   $ref: '#/components/schemas/CategoriaContenido'
                 urlMiniatura:
                   type: string
                   format: uri
-                  examples: ["https://storage.yt.example/miniaturas/patagonia-ep3.jpg"]
+                  example: ["https://storage.yt.example/miniaturas/patagonia-ep3.jpg"]
       responses:
         '201':
           description: Ítem de catálogo creado exitosamente en estado Borrador.
@@ -297,24 +297,24 @@ paths:
                 titulo:
                   type: string
                   maxLength: 255
-                  examples: ["Vlog Patagonia Ep. 3 — Torres del Paine (versión extendida)"]
+                  example: ["Vlog Patagonia Ep. 3 — Torres del Paine (versión extendida)"]
                 descripcion:
                   type: string
                   maxLength: 5000
-                  examples: ["Versión extendida con material de detrás de cámara."]
+                  example: ["Versión extendida con material de detrás de cámara."]
                 tags:
                   type: array
                   items:
                     type: string
                     maxLength: 50
                   maxItems: 30
-                  examples: [["viaje", "patagonia", "chile", "naturaleza", "camping"]]
+                  example: [["viaje", "patagonia", "chile", "naturaleza", "camping"]]
                 categoria:
                   $ref: '#/components/schemas/CategoriaContenido'
                 urlMiniatura:
                   type: string
                   format: uri
-                  examples: ["https://storage.yt.example/miniaturas/patagonia-ep3-v2.jpg"]
+                  example: ["https://storage.yt.example/miniaturas/patagonia-ep3-v2.jpg"]
       responses:
         '200':
           description: Metadata editorial actualizada exitosamente.
@@ -363,12 +363,12 @@ paths:
                 estadoVisibilidad:
                   type: string
                   enum: [Publicado, Despublicado]
-                  examples: ["Publicado"]
+                  example: ["Publicado"]
                 motivoDespublicacion:
                   type: string
                   maxLength: 500
                   description: Razón opcional cuando el creador decide despublicar el contenido.
-                  examples: ["Contenido siendo reeditado para la versión extendida."]
+                  example: ["Contenido siendo reeditado para la versión extendida."]
       responses:
         '200':
           description: Estado de visibilidad actualizado exitosamente.
@@ -467,15 +467,15 @@ paths:
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 titulo:
                   type: string
                   maxLength: 255
-                  examples: ["Serie Patagonia — Temporada 1"]
+                  example: ["Serie Patagonia — Temporada 1"]
                 descripcion:
                   type: string
                   maxLength: 2000
-                  examples: ["Todos los episodios del viaje por la Patagonia chilena y argentina."]
+                  example: ["Todos los episodios del viaje por la Patagonia chilena y argentina."]
                 visibilidad:
                   type: string
                   enum: [Publica, Privada, NoListada]
@@ -484,7 +484,7 @@ paths:
                     Controla quién puede ver la playlist.
                     'Publica': visible para todos. 'Privada': solo el creador.
                     'NoListada': accesible con el enlace directo pero no aparece en el canal.
-                  examples: ["Publica"]
+                  example: ["Publica"]
       responses:
         '201':
           description: Playlist creada exitosamente.
@@ -544,15 +544,15 @@ paths:
                 titulo:
                   type: string
                   maxLength: 255
-                  examples: ["Serie Patagonia — Colección Completa"]
+                  example: ["Serie Patagonia — Colección Completa"]
                 descripcion:
                   type: string
                   maxLength: 2000
-                  examples: ["Temporadas 1 y 2 completas."]
+                  example: ["Temporadas 1 y 2 completas."]
                 visibilidad:
                   type: string
                   enum: [Publica, Privada, NoListada]
-                  examples: ["NoListada"]
+                  example: ["NoListada"]
       responses:
         '200':
           description: Playlist actualizada exitosamente.
@@ -607,7 +607,7 @@ paths:
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
       responses:
         '200':
           description: Ítem agregado exitosamente. Retorna la playlist actualizada.
@@ -675,7 +675,7 @@ paths:
                     format: uuid
                   minItems: 1
                   description: Array de idItemCatalogo en el nuevo orden deseado.
-                  examples: [["7c9e6679-7425-40de-944b-e07fc1f90ae7", "a2b3c4d5-e6f7-8901-bcde-f12345678901"]]
+                  example: [["7c9e6679-7425-40de-944b-e07fc1f90ae7", "a2b3c4d5-e6f7-8901-bcde-f12345678901"]]
       responses:
         '200':
           description: Orden actualizado exitosamente.
@@ -728,7 +728,7 @@ paths:
                       $ref: '#/components/schemas/Reclamacion'
                   totalRecords:
                     type: integer
-                    examples: [2]
+                    example: [2]
         '404':
           description: El ítem de catálogo especificado no existe.
           content:
@@ -758,13 +758,13 @@ paths:
                   type: string
                   format: uuid
                   description: Identificador del titular de derechos en el sistema de identidad compartido.
-                  examples: ["f1a2b3c4-d5e6-7890-abcd-ef1234567890"]
+                  example: ["f1a2b3c4-d5e6-7890-abcd-ef1234567890"]
                 tipoReclamacion:
                   $ref: '#/components/schemas/TipoReclamacion'
                 descripcion:
                   type: string
                   maxLength: 2000
-                  examples: ["El fragmento entre 01:23 y 02:45 utiliza composición musical protegida sin licencia."]
+                  example: ["El fragmento entre 01:23 y 02:45 utiliza composición musical protegida sin licencia."]
                 territoriosAfectados:
                   type: array
                   items:
@@ -772,12 +772,12 @@ paths:
                     minLength: 2
                     maxLength: 2
                   description: Códigos de país ISO 3166-1 alpha-2 donde aplica la reclamación. Si está vacío, aplica globalmente.
-                  examples: [["CL", "AR", "MX"]]
+                  example: [["CL", "AR", "MX"]]
                 urlEvidencia:
                   type: string
                   format: uri
                   description: Enlace opcional a documentación de respaldo de la reclamación.
-                  examples: ["https://derechos.example/evidencia/caso-12345.pdf"]
+                  example: ["https://derechos.example/evidencia/caso-12345.pdf"]
       responses:
         '201':
           description: Reclamación registrada exitosamente.
@@ -830,11 +830,11 @@ paths:
                     'Aceptada': el contenido queda restringido según los territorios de la reclamación.
                     'Disputada': el creador impugna la reclamación; queda pendiente de revisión adicional.
                     'Retirada': el reclamante retira la reclamación; se levantan las restricciones asociadas.
-                  examples: ["Aceptada"]
+                  example: ["Aceptada"]
                 motivoResolucion:
                   type: string
                   maxLength: 1000
-                  examples: ["Reclamación validada con la documentación de derechos aportada."]
+                  example: ["Reclamación validada con la documentación de derechos aportada."]
       responses:
         '200':
           description: Reclamación resuelta exitosamente.
@@ -911,13 +911,13 @@ paths:
                 motivo:
                   type: string
                   maxLength: 1000
-                  examples: ["Contenido clasificado para mayores de 18 años por la junta de revisión de políticas."]
+                  example: ["Contenido clasificado para mayores de 18 años por la junta de revisión de políticas."]
                 edadMinima:
                   type: integer
                   minimum: 0
                   maximum: 21
                   description: Requerido cuando tipoRestriccion es 'RestriccionEtaria'.
-                  examples: [18]
+                  example: [18]
                 territoriosBloqueados:
                   type: array
                   items:
@@ -925,11 +925,11 @@ paths:
                     minLength: 2
                     maxLength: 2
                   description: Requerido cuando tipoRestriccion es 'BloqueGeografico'.
-                  examples: [["CN", "RU"]]
+                  example: [["CN", "RU"]]
                 monetizacionLimitada:
                   type: boolean
                   description: Requerido cuando tipoRestriccion es 'LimitacionMonetizacion'.
-                  examples: [true]
+                  example: [true]
       responses:
         '201':
           description: Restricción aplicada exitosamente.
@@ -1009,7 +1009,7 @@ components:
         type: string
         format: uuid
       description: Identificador único del canal editorial.
-      examples:
+      example:
         default:
           value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
@@ -1021,7 +1021,7 @@ components:
         type: string
         format: uuid
       description: Identificador único del ítem de catálogo.
-      examples:
+      example:
         default:
           value: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
 
@@ -1033,7 +1033,7 @@ components:
         type: string
         format: uuid
       description: Identificador único de la playlist.
-      examples:
+      example:
         default:
           value: "b5c6d7e8-f9a0-4b1c-2d3e-4f5a6b7c8d9e"
 
@@ -1115,29 +1115,29 @@ components:
           format: uuid
           readOnly: true
           description: Identificador único del canal (RNF-2). Compartido como referencia con otros contextos.
-          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         idCreador:
           type: string
           format: uuid
           description: Identificador del creador en el sistema de identidad compartido.
-          examples: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+          example: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
         nombre:
           type: string
           maxLength: 100
-          examples: ["Canal de Viajes Marcelo"]
+          example: ["Canal de Viajes Marcelo"]
         descripcion:
           type: [string, "null"]
           maxLength: 1000
-          examples: ["Vlogs de viaje por Sudamérica y el mundo."]
+          example: ["Vlogs de viaje por Sudamérica y el mundo."]
         urlImagenPerfil:
           type: [string, "null"]
           format: uri
-          examples: ["https://storage.yt.example/avatares/marcelo.jpg"]
+          example: ["https://storage.yt.example/avatares/marcelo.jpg"]
         fechaCreacion:
           type: string
           format: date-time
           readOnly: true
-          examples: ["2026-01-15T10:00:00Z"]
+          example: ["2026-01-15T10:00:00Z"]
 
     ItemCatalogo:
       type: object
@@ -1152,30 +1152,30 @@ components:
           format: uuid
           readOnly: true
           description: Identificador único del ítem en el catálogo editorial.
-          examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+          example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
         idAsset:
           type: string
           format: uuid
           description: Referencia al asset técnico en el Contexto de Publicación (RNF-2).
-          examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+          example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
         idCanal:
           type: string
           format: uuid
           description: Canal al que pertenece este contenido (RNF-2).
-          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         titulo:
           type: string
           maxLength: 255
-          examples: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
+          example: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
         descripcion:
           type: [string, "null"]
           maxLength: 5000
-          examples: ["Tercer episodio de la serie: tres días en el parque nacional."]
+          example: ["Tercer episodio de la serie: tres días en el parque nacional."]
         tags:
           type: array
           items:
             type: string
-          examples: [["viaje", "patagonia", "chile", "naturaleza"]]
+          example: [["viaje", "patagonia", "chile", "naturaleza"]]
         categoria:
           oneOf:
             - $ref: '#/components/schemas/CategoriaContenido'
@@ -1183,20 +1183,20 @@ components:
         urlMiniatura:
           type: [string, "null"]
           format: uri
-          examples: ["https://storage.yt.example/miniaturas/patagonia-ep3.jpg"]
+          example: ["https://storage.yt.example/miniaturas/patagonia-ep3.jpg"]
         estadoVisibilidad:
           $ref: '#/components/schemas/EstadoVisibilidad'
         fechaCreacion:
           type: string
           format: date-time
           readOnly: true
-          examples: ["2026-06-15T22:10:00Z"]
+          example: ["2026-06-15T22:10:00Z"]
         fechaPublicacion:
           type: [string, "null"]
           format: date-time
           readOnly: true
           description: Fecha en que el ítem pasó por primera vez a estado 'Publicado'.
-          examples: ["2026-06-16T09:00:00Z"]
+          example: ["2026-06-16T09:00:00Z"]
 
     ItemCatalogoDetalle:
       type: object
@@ -1214,7 +1214,7 @@ components:
               type: integer
               readOnly: true
               description: Cantidad de reclamaciones en estado 'Pendiente' o 'Disputada'.
-              examples: [0]
+              example: [0]
 
     PaginaContenidos:
       type: object
@@ -1226,13 +1226,13 @@ components:
             $ref: '#/components/schemas/ItemCatalogo'
         totalRecords:
           type: integer
-          examples: [54]
+          example: [54]
         page:
           type: integer
-          examples: [1]
+          example: [1]
         limit:
           type: integer
-          examples: [20]
+          example: [20]
 
     ResultadoVisibilidad:
       type: object
@@ -1242,11 +1242,11 @@ components:
         idItemCatalogo:
           type: string
           format: uuid
-          examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+          example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
         visible:
           type: boolean
           description: Indica si el contenido puede ser mostrado al espectador con los parámetros dados.
-          examples: [true]
+          example: [true]
         estadoVisibilidad:
           $ref: '#/components/schemas/EstadoVisibilidad'
         motivoNoVisibilidad:
@@ -1258,7 +1258,7 @@ components:
             - RESTRICCION_ETARIA
             - SUSPENSION_MODERACION
             - null
-          examples: [null]
+          example: [null]
 
     Playlist:
       type: object
@@ -1268,31 +1268,31 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["b5c6d7e8-f9a0-4b1c-2d3e-4f5a6b7c8d9e"]
+          example: ["b5c6d7e8-f9a0-4b1c-2d3e-4f5a6b7c8d9e"]
         idCanal:
           type: string
           format: uuid
-          examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+          example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
         titulo:
           type: string
           maxLength: 255
-          examples: ["Serie Patagonia — Temporada 1"]
+          example: ["Serie Patagonia — Temporada 1"]
         descripcion:
           type: [string, "null"]
           maxLength: 2000
-          examples: ["Todos los episodios del viaje por la Patagonia chilena y argentina."]
+          example: ["Todos los episodios del viaje por la Patagonia chilena y argentina."]
         visibilidad:
           $ref: '#/components/schemas/VisibilidadPlaylist'
         totalItems:
           type: integer
           readOnly: true
           description: Cantidad total de ítems en la playlist.
-          examples: [5]
+          example: [5]
         fechaCreacion:
           type: string
           format: date-time
           readOnly: true
-          examples: ["2026-06-10T08:00:00Z"]
+          example: ["2026-06-10T08:00:00Z"]
 
     ItemPlaylist:
       type: object
@@ -1303,19 +1303,19 @@ components:
           type: integer
           minimum: 1
           description: Posición del ítem dentro del orden de la playlist (1-indexed).
-          examples: [1]
+          example: [1]
         idItemCatalogo:
           type: string
           format: uuid
-          examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+          example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
         titulo:
           type: string
           description: Título del ítem en el momento de la consulta (desnormalizado para eficiencia de lectura).
-          examples: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
+          example: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
         urlMiniatura:
           type: [string, "null"]
           format: uri
-          examples: ["https://storage.yt.example/miniaturas/patagonia-ep3.jpg"]
+          example: ["https://storage.yt.example/miniaturas/patagonia-ep3.jpg"]
 
     PlaylistDetalle:
       type: object
@@ -1331,13 +1331,13 @@ components:
                 $ref: '#/components/schemas/ItemPlaylist'
             totalRecords:
               type: integer
-              examples: [5]
+              example: [5]
             page:
               type: integer
-              examples: [1]
+              example: [1]
             limit:
               type: integer
-              examples: [20]
+              example: [20]
 
     Reclamacion:
       type: object
@@ -1347,49 +1347,49 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["c1d2e3f4-a5b6-4789-0abc-def123456789"]
+          example: ["c1d2e3f4-a5b6-4789-0abc-def123456789"]
         idItemCatalogo:
           type: string
           format: uuid
-          examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+          example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
         idReclamante:
           type: string
           format: uuid
-          examples: ["f1a2b3c4-d5e6-7890-abcd-ef1234567890"]
+          example: ["f1a2b3c4-d5e6-7890-abcd-ef1234567890"]
         tipoReclamacion:
           $ref: '#/components/schemas/TipoReclamacion'
         descripcion:
           type: string
-          examples: ["El fragmento entre 01:23 y 02:45 utiliza composición musical protegida sin licencia."]
+          example: ["El fragmento entre 01:23 y 02:45 utiliza composición musical protegida sin licencia."]
         territoriosAfectados:
           type: array
           items:
             type: string
-          examples: [["CL", "AR", "MX"]]
+          example: [["CL", "AR", "MX"]]
         urlEvidencia:
           type: [string, "null"]
           format: uri
-          examples: [null]
+          example: [null]
         estado:
           $ref: '#/components/schemas/EstadoReclamacion'
         resolucion:
           type: [string, "null"]
           enum: [Aceptada, Disputada, Retirada, null]
           description: Presente únicamente cuando el estado es distinto de 'Pendiente'.
-          examples: [null]
+          example: [null]
         motivoResolucion:
           type: [string, "null"]
-          examples: [null]
+          example: [null]
         fechaCreacion:
           type: string
           format: date-time
           readOnly: true
-          examples: ["2026-06-17T14:00:00Z"]
+          example: ["2026-06-17T14:00:00Z"]
         fechaResolucion:
           type: [string, "null"]
           format: date-time
           readOnly: true
-          examples: [null]
+          example: [null]
 
     Restriccion:
       type: object
@@ -1399,41 +1399,41 @@ components:
           type: string
           format: uuid
           readOnly: true
-          examples: ["e1f2a3b4-c5d6-4789-0abc-ef1234567890"]
+          example: ["e1f2a3b4-c5d6-4789-0abc-ef1234567890"]
         idItemCatalogo:
           type: string
           format: uuid
-          examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+          example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
         tipoRestriccion:
           $ref: '#/components/schemas/TipoRestriccion'
         motivo:
           type: string
-          examples: ["Contenido clasificado para mayores de 18 años."]
+          example: ["Contenido clasificado para mayores de 18 años."]
         edadMinima:
           type: [integer, "null"]
-          examples: [18]
+          example: [18]
         territoriosBloqueados:
           type: array
           items:
             type: string
-          examples: [[]]
+          example: [[]]
         monetizacionLimitada:
           type: [boolean, "null"]
-          examples: [null]
+          example: [null]
         activa:
           type: boolean
           description: Indica si la restricción está vigente actualmente.
-          examples: [true]
+          example: [true]
         fechaAplicacion:
           type: string
           format: date-time
           readOnly: true
-          examples: ["2026-06-18T10:00:00Z"]
+          example: ["2026-06-18T10:00:00Z"]
         fechaLevantamiento:
           type: [string, "null"]
           format: date-time
           readOnly: true
-          examples: [null]
+          example: [null]
 
     EstadoPoliticaContenido:
       type: object
@@ -1443,7 +1443,7 @@ components:
         idItemCatalogo:
           type: string
           format: uuid
-          examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+          example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
         restriccionesActivas:
           type: array
           items:
@@ -1462,15 +1462,15 @@ components:
         codigo:
           type: string
           description: Código de error interno para mapeo semántico.
-          examples: ["ASSET_YA_VINCULADO"]
+          example: ["ASSET_YA_VINCULADO"]
         mensaje:
           type: string
           description: Descripción del error para el desarrollador o cliente.
-          examples: ["Ya existe un ítem de catálogo vinculado al asset especificado."]
+          example: ["Ya existe un ítem de catálogo vinculado al asset especificado."]
         timestamp:
           type: string
           format: date-time
-          examples: ["2026-06-15T22:10:00Z"]
+          example: ["2026-06-15T22:10:00Z"]
         detalles:
           type: array
           items:
@@ -1501,29 +1501,29 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"]
+                  example: ["c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f"]
                 idAsset:
                   type: string
                   format: uuid
                   description: Identificador técnico del asset. Catálogo lo referencia en su ItemCatalogo.
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 duracionSegundos:
                   type: integer
                   minimum: 0
-                  examples: [842]
+                  example: [842]
                 calidadesGeneradas:
                   type: array
                   items:
                     type: string
-                  examples: [["360p", "720p", "1080p"]]
+                  example: [["360p", "720p", "1080p"]]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T22:06:00Z"]
+                  example: ["2026-06-15T22:06:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado para procesamiento asíncrono.
@@ -1548,28 +1548,28 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b"]
+                  example: ["e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b"]
                 idTransmision:
                   type: string
                   format: uuid
-                  examples: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
+                  example: ["f1e2d3c4-b5a6-4978-8c9d-0e1f2a3b4c5d"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 estado:
                   type: string
                   enum: [Configurada, EnVivo, Pausada, Finalizada]
-                  examples: ["Finalizada"]
+                  example: ["Finalizada"]
                 idAssetGrabacion:
                   type: [string, "null"]
                   format: uuid
                   description: Presente cuando 'estado' es 'Finalizada' y se generó grabación.
-                  examples: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                  example: ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-15T23:00:00Z"]
+                  example: ["2026-06-15T23:00:00Z"]
       responses:
         '202':
           description: Evento recibido y aceptado para procesamiento asíncrono.
@@ -1600,29 +1600,29 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["a9b8c7d6-e5f4-4321-0fed-cba987654321"]
+                  example: ["a9b8c7d6-e5f4-4321-0fed-cba987654321"]
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 titulo:
                   type: string
-                  examples: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
+                  example: ["Vlog Patagonia Ep. 3 — Torres del Paine"]
                 categoria:
                   $ref: '#/components/schemas/CategoriaContenido'
                 tags:
                   type: array
                   items:
                     type: string
-                  examples: [["viaje", "patagonia", "chile"]]
+                  example: [["viaje", "patagonia", "chile"]]
                 restriccionesActivas:
                   type: array
                   items:
@@ -1640,7 +1640,7 @@ webhooks:
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-16T09:00:00Z"]
+                  example: ["2026-06-16T09:00:00Z"]
       responses:
         '202':
           description: Evento recibido por los contextos suscriptores.
@@ -1671,31 +1671,31 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["b0c1d2e3-f4a5-4678-9012-bcdef3456789"]
+                  example: ["b0c1d2e3-f4a5-4678-9012-bcdef3456789"]
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 nuevoEstado:
                   type: string
                   enum: [Despublicado, Restringido]
-                  examples: ["Despublicado"]
+                  example: ["Despublicado"]
                 motivo:
                   type: string
                   enum: [DECISION_CREADOR, RECLAMACION_DERECHOS, POLITICA_MODERACION]
-                  examples: ["DECISION_CREADOR"]
+                  example: ["DECISION_CREADOR"]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-17T12:00:00Z"]
+                  example: ["2026-06-17T12:00:00Z"]
       responses:
         '202':
           description: Evento recibido por los contextos suscriptores.
@@ -1721,37 +1721,37 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["c1d2e3f4-a5b6-4789-0123-cdef45678901"]
+                  example: ["c1d2e3f4-a5b6-4789-0123-cdef45678901"]
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 idRestriccion:
                   type: string
                   format: uuid
-                  examples: ["e1f2a3b4-c5d6-4789-0abc-ef1234567890"]
+                  example: ["e1f2a3b4-c5d6-4789-0abc-ef1234567890"]
                 tipoRestriccion:
                   $ref: '#/components/schemas/TipoRestriccion'
                 edadMinima:
                   type: [integer, "null"]
-                  examples: [18]
+                  example: [18]
                 territoriosBloqueados:
                   type: array
                   items:
                     type: string
-                  examples: [[]]
+                  example: [[]]
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-18T10:00:00Z"]
+                  example: ["2026-06-18T10:00:00Z"]
       responses:
         '202':
           description: Evento recibido por los contextos suscriptores.
@@ -1776,29 +1776,29 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["d2e3f4a5-b6c7-4890-1234-def567890123"]
+                  example: ["d2e3f4a5-b6c7-4890-1234-def567890123"]
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
                 idAsset:
                   type: string
                   format: uuid
-                  examples: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
+                  example: ["d3b07384-d113-4956-a5db-2d1b331a0f2c"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 idRestriccion:
                   type: string
                   format: uuid
-                  examples: ["e1f2a3b4-c5d6-4789-0abc-ef1234567890"]
+                  example: ["e1f2a3b4-c5d6-4789-0abc-ef1234567890"]
                 tipoRestriccion:
                   $ref: '#/components/schemas/TipoRestriccion'
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-19T08:00:00Z"]
+                  example: ["2026-06-19T08:00:00Z"]
       responses:
         '202':
           description: Evento recibido por los contextos suscriptores.
@@ -1822,25 +1822,25 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["e3f4a5b6-c7d8-4901-2345-ef6789012345"]
+                  example: ["e3f4a5b6-c7d8-4901-2345-ef6789012345"]
                 idReclamacion:
                   type: string
                   format: uuid
-                  examples: ["c1d2e3f4-a5b6-4789-0abc-def123456789"]
+                  example: ["c1d2e3f4-a5b6-4789-0abc-def123456789"]
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 tipoReclamacion:
                   $ref: '#/components/schemas/TipoReclamacion'
                 timestamp:
                   type: string
                   format: date-time
-                  examples: ["2026-06-17T14:00:00Z"]
+                  example: ["2026-06-17T14:00:00Z"]
       responses:
         '202':
           description: Evento recibido por los sistemas suscriptores.
@@ -1865,23 +1865,23 @@ webhooks:
                 idEvento:
                   type: string
                   format: uuid
-                  examples: ["f4a5b6c7-d8e9-4012-3456-f0123456789a"]
+                  example: ["f4a5b6c7-d8e9-4012-3456-f0123456789a"]
                 idReclamacion:
                   type: string
                   format: uuid
-                  examples: ["c1d2e3f4-a5b6-4789-0abc-def123456789"]
+                  example: ["c1d2e3f4-a5b6-4789-0abc-def123456789"]
                 idItemCatalogo:
                   type: string
                   format: uuid
-                  examples: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
+                  example: ["7c9e6679-7425-40de-944b-e07fc1f90ae7"]
                 idCanal:
                   type: string
                   format: uuid
-                  examples: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+                  example: ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
                 resolucion:
                   type: string
                   enum: [Aceptada, Disputada, Retirada]
-                  examples: ["Aceptada"]
+                  example: ["Aceptada"]
                 timestamp:
                   type: string
                   format: date-time
