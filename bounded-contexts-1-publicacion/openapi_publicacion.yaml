@@ -691,7 +691,7 @@ components:
               items:
                 type: string
               description: Calidades técnicas generadas y disponibles para reproducción.
-              examples: [["360p", "720p", "1080p"]]
+              example: [["360p", "720p", "1080p"]]
             tamanoBytesOriginal:
               type: integer
               format: int64
@@ -717,7 +717,7 @@ components:
           items:
             type: string
           description: Resoluciones ya generadas para este asset (RF-P2).
-          examples: [["360p", "720p", "1080p"]]
+          example: [["360p", "720p", "1080p"]]
         motivoFallo:
           type: [string, "null"]
           example: [null]
@@ -926,7 +926,7 @@ webhooks:
                   type: array
                   items:
                     type: string
-                  examples: [["360p", "720p", "1080p"]]
+                  example: [["360p", "720p", "1080p"]]
                 motivoFallo:
                   type: [string, "null"]
                   example: [null]
@@ -977,7 +977,7 @@ webhooks:
                   type: array
                   items:
                     type: string
-                  examples: [["360p", "720p", "1080p"]]
+                  example: [["360p", "720p", "1080p"]]
                 timestamp:
                   type: string
                   format: date-time
