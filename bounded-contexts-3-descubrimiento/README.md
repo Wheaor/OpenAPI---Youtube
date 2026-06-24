@@ -18,7 +18,7 @@ Su responsabilidad se limita a determinar qué contenido debe ser descubierto po
 
 El contrato formal de la API con sus endpoints, estructuras de datos (schemas), paginación y gestión de errores se encuentra en el siguiente archivo:
 
-* 📄 [Ver Especificación OpenAPI](./openapi_acotados.yaml)
+* 📄 [Ver Especificación OpenAPI](./openapi_acotados.yml)
 
 ---
 
