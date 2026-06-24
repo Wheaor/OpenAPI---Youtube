@@ -93,7 +93,7 @@ classDiagram
         -idCanal: UUID
         -titulo: string
         -descripcion: string
-        -List~String~ tags
+        -tags: string[]
         -categoria: CategoriaContenido
         -urlMiniatura: URI
         -estadoVisibilidad: EstadoVisibilidad
@@ -102,7 +102,7 @@ classDiagram
         +editarMetadata(titulo, descripcion, tags, categoria, urlMiniatura) ItemCatalogo
         +publicar() void
         +despublicar(motivo) void
-        +tieneRestriccionBloqueante() Boolean
+        +tieneRestriccionBloqueante() boolean
         +evaluarVisibilidad(pais, edad) ResultadoVisibilidad
         +aplicarRestriccion(tipo, motivo, params) Restriccion
         +levantarRestriccion(idRestriccion) void
@@ -134,14 +134,14 @@ classDiagram
         -tipoRestriccion: TipoRestriccion
         -motivo: string
         -edadMinima: int
-        -List~String~ territoriosBloqueados
-        -monetizacionLimitada: Boolean
-        -activa: Boolean
+        -territoriosBloqueados: string[]
+        -monetizacionLimitada: boolean
+        -activa: boolean
         -fechaAplicacion: DateTime
         -fechaLevantamiento: DateTime
-        +esBloqueante() Boolean
+        +esBloqueante() boolean
         +levantar() void
-        +afectaA(pais, edad) Boolean
+        +afectaA(pais, edad) boolean
     }
 
     class Reclamacion {
@@ -150,7 +150,7 @@ classDiagram
         -idReclamante: UUID
         -tipoReclamacion: TipoReclamacion
         -descripcion: string
-        -List~String~ territoriosAfectados
+        -territoriosAfectados: string[]
         -urlEvidencia: URI
         -estado: EstadoReclamacion
         -resolucion: string
@@ -167,7 +167,7 @@ classDiagram
     class ResultadoVisibilidad {
         <<value object>>
         -idItemCatalogo: UUID
-        -visible: Boolean
+        -visible: boolean
         -estadoVisibilidad: EstadoVisibilidad
         -motivoNoVisibilidad: string
     }
@@ -175,8 +175,8 @@ classDiagram
     class EstadoPoliticaContenido {
         <<read model>>
         -idItemCatalogo: UUID
-        -List~Restriccion~ restriccionesActivas
-        -List~Restriccion~ historial
+        -restriccionesActivas: Restriccion[]
+        -historial: Restriccion[]
     }
 
 
